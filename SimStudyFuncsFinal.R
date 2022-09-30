@@ -26,36 +26,6 @@ CreateDataVaryWeight <- function(nobs, nclus, DPparams, nu1, nu2, muphi, lambda,
   return(retlist)
 }
 
-# Single cluster example
-# Function which creates raw data
-# CreateDataSingleCluster <- function(nobs, murange, calcurve, a, g, h) {
-CreateDataSingleCluster <- function(nobs, murange, calcurve, masternu1 = 2, masternu2 = 4000, xsig) {
-  # Choose a value for the mean of the cluster
-  phitrue <- runif(1, murange[1], murange[2])
-
-  # Now estimate a precision
-  # tempbeta <- rgamma(1, g, h)
-  # tautrue <- rgamma(1, a, tempbeta)
-  tautrue <- rgamma(1, masternu1, masternu2)
-
-  # Create some observed data from the clusters according to probabilities
-  weights <- 1
-  ctrue <- rep(1, nobs)
-  theta <- rnorm(nobs, mean = phitrue[ctrue], sd = 1 / sqrt(tautrue[ctrue]))
-
-  #### Now create some radiocarbon determinations x
-
-  # Interpolate calobration curve mean and sd at theta values
-  calinterp <- FindCal(theta, calmu = calcurve$c14age, caltheta = calcurve$calage, calsig = calcurve$c14sig)
-
-  # Sample some calibration curve values
-  xcalcurve <- rnorm(nobs, calinterp$mu, calinterp$sigma)
-
-  x <- rnorm(nobs, mean = xcalcurve, sd = xsig)
-  retlist <- list(x = x, thetatrue = theta, tautrue = tautrue, phitrue = phitrue, weights = weights, ctrue = ctrue)
-  return(retlist)
-}
-
 
 # Uniform distribution example
 CreateSingleUniformPhaseData <- function(nobs, startrange, calcurve, phaserange, xsig) {

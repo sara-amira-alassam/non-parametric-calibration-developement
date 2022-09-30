@@ -16,66 +16,6 @@ as.row <- function(x) {
   }
   y
 }
-
-######################################################
-### Univariate Versions of Functions
-######################################################
-
-######## Updatec ###################
-# Function which updates the ith element of c given current theta and phi
-# Arguments:
-# i - the element to update in c
-# c - the vector of cluster identifiers
-# phi - vector of current parameters
-# theta - the given calendar ages where in a spcific cluster theta ~ N(phi, sigma^2)
-# sigma - the sd on y ~ N(phi, sd = sigma)
-# prmean and prsd - the mean and sd of G0 i.e. phi ~ N(prmean, prsd^2)
-# alpha - parameter in stick breaking (considered fixed here although can give hyperprior)
-# Returns:
-# c - updated vector of cluster identifiers
-# phi - updated vector of current cluster parameters
-# Note: phi will need to stored as a list on return as variable length
-Updatec <- function(i, c, phi, theta, sigma = 1, prmean = 0, prsd = 1, alpha = 1) {
-  nc <- length(phi)
-  ci <- c[i] # Cluster of element to update
-  cminus <- c[-i] # the other cluster elements
-  if (sum(cminus == ci) == 0) {
-    phi <- phi[-ci] # Remove phi for ci if no other elements
-    cminus[cminus > ci] <- cminus[cminus > ci] - 1 # Adjust labelling
-    nc <- nc - 1 # Adjust n levels
-  }
-  nci <- apply(as.row(1:nc), 2, function(x, cminus) sum(cminus == x), cminus = cminus)
-  cprob <- c(dnorm(theta, mean = phi, sd = sigma), dnorm(theta, mean = prmean, sd = sqrt(sigma^2 + prsd^2)))
-  cprob <- cprob * c(nci, alpha) # weight by number in class
-  class <- sample(1:(nc + 1), 1, prob = cprob)
-  if (class == (nc + 1)) { # We have sampled a new state
-    hsd <- sqrt(1 / (1 / prsd^2 + 1 / sigma^2))
-    hmean <- hsd^2 * (prmean / (prsd^2) + theta / (sigma^2))
-    phi <- c(phi, rnorm(1, mean = hmean, sd = hsd)) # Sample new phi
-  }
-  # Now update the return class variables
-  c[-i] <- cminus
-  c[i] <- class
-  retlist <- list(c = c, phi = phi)
-  return(retlist)
-}
-
-############################################################
-# This function will sample from the posterior of phi given a set of calendar ages from that cluster
-# For each cluster in turn we have
-# theta ~ N(phi, sigma^2)
-# Arguments:
-# theta - vector of object calendar ages (all belonging to same cluster)
-# sigma - the sd on theta ~ N(phi, sd = sigma)
-# prmean and prsd - the mean and sd of G0
-Updatephi <- function(theta, sigma, prmean, prsd) {
-  nclus <- length(theta)
-  postsd <- sqrt(1 / (1 / prsd^2 + nclus / sigma^2))
-  postmean <- postsd^2 * (prmean / (prsd^2) + sum(theta) / (sigma^2))
-  rnorm(1, mean = postmean, sd = postsd)
-}
-
-
 ######################################################
 ### Bivariate Versions of Functions - ie updates unknown cluster means and variances
 ######################################################
@@ -198,71 +138,6 @@ Updatemuphi <- function(phi, tau, lambda, A, B) {
 #####################################################################
 
 
-############################################################
-# This function will perform MH to update calendar age of the objects
-# given radiocarbon determination and cluster mean
-# Arguments:
-# theta - current cal age estimate
-# phi - mean of cluster theta is thought to come from
-# sigma - sd of cluster
-# x - radiocarbon determination
-# xsig - sd of radicoarbon determination
-# calmu - posterior mean of calibration curve
-# caltheta - corresponding calendar ages
-# calsig - posterior sd of calibration curve
-# propsd - the proposal sd for new calendar age
-Updatecalage <- function(theta, phi, sigma, x, xsig, calmu, caltheta, calsig, propsd) {
-  # Propose a new calendar age
-  thetanew <- rnorm(1, mean = theta, sd = propsd)
-
-  # Bit of code which finds mu(theta) and sdcal(theta) by interpolation
-  calold <- FindCal(theta, calmu, caltheta, calsig)
-  calnew <- FindCal(thetanew, calmu, caltheta, calsig)
-
-  # Find log-likelihoods
-  loglikold <- dnorm(theta, mean = phi, sd = sigma, log = TRUE) + dnorm(x, mean = calold$mu, sd = sqrt(calold$sigma^2 + xsig^2), log = TRUE)
-  logliknew <- dnorm(thetanew, mean = phi, sd = sigma, log = TRUE) + dnorm(x, mean = calnew$mu, sd = sqrt(calnew$sigma^2 + xsig^2), log = TRUE)
-
-  # Find HR
-  HR <- exp(logliknew - loglikold)
-  # Decide whether to accept or reject
-  if (runif(1) < HR) {
-    return(thetanew)
-  } # Accept new thetanew
-  return(theta) # Else reject and return theta
-}
-
-
-############################################################
-# This function will perform a SLICE SAMPLER to
-# to update calendar age of the objects
-# given radiocarbon determination and cluster mean
-# Arguments:
-# theta0 - current cal age estimate
-# phi - mean of cluster theta is thought to come from
-# sigma - sd of cluster
-# x - radiocarbon determination
-# xsig - sd of radicoarbon determination
-# calmu - posterior mean of calibration curve
-# caltheta - corresponding calendar ages
-# calsig - posterior sd of calibration curve
-## Slice sampling parameters
-# w - estimate of typical slice size
-# m - integer limiting slice size to mw
-SliceUpdatecalage <- function(theta0, phi, sigma, x, xsig,
-                              calmu, caltheta, calsig,
-                              w, m) {
-
-  # Now perform slice update using this function
-  SliceSample(
-    TARGET = thetaloglik, x0 = theta0,
-    w = w, m = m, type = "log",
-    phi = phi, sigma = sigma, x = x, xsig = xsig,
-    calmu = calmu, caltheta = caltheta, calsig = calsig
-  )
-}
-
-
 # Create a function which works out the log-likelihood
 # (i.e. log-target for any z (theta) given other parameters
 
@@ -295,7 +170,6 @@ thetaloglikfast <- function(z, prmean, prsig, c14obs, c14sig, mucalallyr, sigcal
 }
 
 
-
 # This function will interpolate a value for the calibration curve
 # at age theta based upon given grid
 # Arguments:
@@ -309,8 +183,6 @@ FindCal <- function(theta, calmu, caltheta, calsig) {
   retlist <- list(mu = mutheta, sigma = musigma)
   return(retlist)
 }
-
-
 
 
 # This function will work out the likelihood of a particular Dir(alpha)
@@ -329,8 +201,6 @@ LogLikalpha <- function(c, alpha) {
   # Note we have to use pmax(nci-1, 1) here to account for clusters of size 1 have 0! = 1
   return(loglik)
 }
-
-
 
 
 # This function will update DP process parameter alpha by MH
