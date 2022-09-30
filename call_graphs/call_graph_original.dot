@@ -1,0 +1,197 @@
+digraph xyz {
+rankdir=TB;
+NPCalibrationWalker[shape=box, fillcolor="#FFFF00", style=filled]
+NPCalibrationNeal[shape=box, fillcolor="#FFFF00", style=filled]
+SimulationStudySingleCluster_Revisedv1[shape=box, fillcolor="#FFFF00", style=filled]
+SimulationStudyThreeCluster_Revisedv1[shape=box, fillcolor="#FFFF00", style=filled]
+SimulationStudyUniform_Revisedv1[shape=box, fillcolor="#FFFF00", style=filled]
+TestDensityEstimateNormal_Revisedv1[shape=box, fillcolor="#FFFF00", style=filled]
+TestDensityEstimateUniform_Revisedv1[shape=box, fillcolor="#FFFF00", style=filled]
+TestDensityMexicoPopulation[shape=box, fillcolor="#FFFF00", style=filled]
+TestDensityMexicoPopulationShifted[shape=box, fillcolor="#FFFF00", style=filled]
+RealDatasetExamples[shape=box, fillcolor="#FFFF00", style=filled]
+RealExamplesWalkerPostProcessingFinal[shape=box, fillcolor="#FFFF00", style=filled]
+BoxplotImprovements[shape=box, fillcolor="#FFFF00", style=filled]
+NealProcessingFinal[shape=box]
+RealExamplesProcessingFinal[shape=box]
+WalkerPostProcessingFinal[shape=box]
+as_row[shape=ellipse]
+BivarGibbsDirichletwithSlice[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+BivarUpdatec[shape=ellipse]
+BivarUpdatephitau[shape=ellipse]
+calibind[shape=ellipse]
+CreateDataSingleCluster[shape=ellipse, fillcolor="#CCCCFF", style=filled] // Could be one function with argument
+CreateDataVaryWeight[shape=ellipse, fillcolor="#CCFFFF", style=filled] // Could be one function with argument
+CreateSingleUniformPhaseData[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+DPWalkerUpdate[shape=ellipse]
+FindCal[shape=ellipse]
+FindCalCurve[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+FindIndLoss[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+FindInterval[shape=ellipse]
+FindLoss[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+LogLikalpha[shape=ellipse]
+Logmargnormgamma[shape=ellipse]
+MixtureDens[shape=ellipse]
+NealFindpred[shape=ellipse]
+plotindpost[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+PredNewDens[shape=ellipse]
+SamplefromInt[shape=ellipse]
+sampnewphi[shape=ellipse]
+SliceSample[shape=ellipse]
+SliceUpdatecalage[shape=ellipse, fillcolor="#CCCCFF", style=filled]
+thetaloglik[shape=ellipse]
+thetaloglikfast[shape=ellipse]
+UniGibbsDirichlet[shape=ellipse, fillcolor="#CCCCFF", style=filled]
+Updatealphagammapr[shape=ellipse]
+Updatealphalognormpr[shape=ellipse]
+Updatec : function[shape=ellipse]
+Updatecalage[shape=ellipse]
+Updatemuphi[shape=ellipse]
+Updatephi[shape=ellipse]
+WalkerBivarDirichlet[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+WalkerFindpred[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+WalkerLogLikc[shape=ellipse]
+WalkerUpdatec[shape=ellipse]
+
+NPCalibrationWalker -> WalkerBivarDirichlet
+RealDatasetExamples -> WalkerBivarDirichlet
+SimulationStudySingleCluster_Revisedv1 -> WalkerBivarDirichlet
+SimulationStudyThreeCluster_Revisedv1 -> WalkerBivarDirichlet
+SimulationStudyUniform_Revisedv1 -> WalkerBivarDirichlet
+TestDensityEstimateNormal_Revisedv1 -> WalkerBivarDirichlet
+TestDensityEstimateUniform_Revisedv1 -> WalkerBivarDirichlet
+TestDensityMexicoPopulation -> WalkerBivarDirichlet
+TestDensityMexicoPopulationShifted -> WalkerBivarDirichlet
+
+NealFindpred -> as_row
+TestDensityEstimateNormal_Revisedv1 -> as_row
+TestDensityEstimateUniform_Revisedv1 -> as_row
+TestDensityMexicoPopulation -> as_row
+TestDensityMexicoPopulationShifted -> as_row
+Updatec -> as_row
+BivarUpdatec -> as_row
+LogLikalpha -> as_row
+WalkerPostProcessingFinal -> as_row
+NealProcessingFinal -> as_row
+RealExamplesProcessingFinal -> as_row
+
+NPCalibrationNeal -> BivarGibbsDirichletwithSlice
+NPCalibrationWalker -> BivarGibbsDirichletwithSlice
+SimulationStudySingleCluster_Revisedv1 -> BivarGibbsDirichletwithSlice
+SimulationStudyThreeCluster_Revisedv1 -> BivarGibbsDirichletwithSlice
+SimulationStudyUniform_Revisedv1 -> BivarGibbsDirichletwithSlice
+TestDensityEstimateNormal_Revisedv1 -> BivarGibbsDirichletwithSlice
+TestDensityEstimateUniform_Revisedv1 -> BivarGibbsDirichletwithSlice
+TestDensityMexicoPopulation -> BivarGibbsDirichletwithSlice
+TestDensityMexicoPopulationShifted -> BivarGibbsDirichletwithSlice
+
+BivarGibbsDirichletwithSlice -> BivarUpdatec
+
+BivarGibbsDirichletwithSlice -> BivarUpdatephitau
+DPWalkerUpdate -> BivarUpdatephitau
+
+NPCalibrationNeal -> calibind
+NPCalibrationWalker -> calibind
+BivarGibbsDirichletwithSlice -> calibind
+RealDatasetExamples -> calibind
+SimulationStudySingleCluster_Revisedv1 -> calibind
+SimulationStudyThreeCluster_Revisedv1 -> calibind
+SimulationStudyUniform_Revisedv1 -> calibind
+TestDensityEstimateNormal_Revisedv1 -> calibind
+TestDensityEstimateUniform_Revisedv1 -> calibind
+TestDensityMexicoPopulation -> calibind
+TestDensityMexicoPopulationShifted -> calibind
+WalkerBivarDirichlet -> calibind
+
+SimulationStudySingleCluster_Revisedv1 -> CreateDataVaryWeight
+SimulationStudyThreeCluster_Revisedv1 -> CreateDataVaryWeight
+
+TestDensityEstimateUniform_Revisedv1 -> CreateSingleUniformPhaseData
+
+WalkerBivarDirichlet -> DPWalkerUpdate
+
+BivarGibbsDirichletwithSlice -> FindCal
+CreateDataVaryWeight -> FindCal
+CreateDataSingleCluster -> FindCal
+CreateSingleUniformPhaseData -> FindCal
+
+TestDensityEstimateNormal_Revisedv1 -> FindCal
+TestDensityEstimateUniform_Revisedv1 -> FindCal
+TestDensityMexicoPopulation -> FindCal
+TestDensityMexicoPopulationShifted -> FindCal
+Updatecalage -> FindCal
+thetaloglik -> FindCal
+WalkerBivarDirichlet -> FindCal
+
+NPCalibrationNeal -> FindCalCurve
+NPCalibrationWalker -> FindCalCurve
+RealDatasetExamples -> FindCalCurve
+SimulationStudySingleCluster_Revisedv1 -> FindCalCurve
+SimulationStudyThreeCluster_Revisedv1 -> FindCalCurve
+SimulationStudyUniform_Revisedv1 -> FindCalCurve
+TestDensityEstimateNormal_Revisedv1 -> FindCalCurve
+TestDensityEstimateUniform_Revisedv1 -> FindCalCurve
+TestDensityMexicoPopulation -> FindCalCurve
+TestDensityMexicoPopulationShifted -> FindCalCurve
+
+SimulationStudySingleCluster_Revisedv1 -> FindIndLoss
+SimulationStudyThreeCluster_Revisedv1 -> FindIndLoss
+SimulationStudyUniform_Revisedv1 -> FindIndLoss
+
+SimulationStudySingleCluster_Revisedv1 -> FindLoss
+SimulationStudyThreeCluster_Revisedv1 -> FindLoss
+SimulationStudyUniform_Revisedv1 -> FindLoss
+
+SliceSample -> FindInterval
+
+Updatealphalognormpr -> LogLikalpha
+
+PredNewDens -> Logmargnormgamma
+BivarUpdatec -> Logmargnormgamma
+
+NealFindpred -> MixtureDens
+WalkerFindpred -> MixtureDens
+
+NPCalibrationNeal -> plotindpost
+NPCalibrationWalker -> plotindpost
+
+NealFindpred -> PredNewDens
+WalkerFindpred -> PredNewDens
+
+SliceSample -> SamplefromInt
+
+DPWalkerUpdate -> sampnewphi
+
+BivarGibbsDirichletwithSlice -> SliceSample
+SliceUpdatecalage -> SliceSample
+WalkerBivarDirichlet -> SliceSample
+
+SliceUpdatecalage -> thetaloglik
+
+BivarGibbsDirichletwithSlice -> thetaloglikfast
+WalkerBivarDirichlet -> thetaloglikfast
+
+UniGibbsDirichlet -> Updatealphagammapr
+BivarGibbsDirichletwithSlice -> Updatealphagammapr
+
+UniGibbsDirichlet -> Updatealphalognormpr
+BivarGibbsDirichletwithSlice -> Updatealphalognormpr
+
+UniGibbsDirichlet -> Updatec
+
+UniGibbsDirichlet -> Updatecalage
+
+BivarGibbsDirichletwithSlice -> Updatemuphi
+WalkerBivarDirichlet -> Updatemuphi
+
+UniGibbsDirichlet -> Updatephi
+
+RealExamplesWalkerPostProcessingFinal -> WalkerFindpred
+TestDensityEstimateNormal_Revisedv1 -> WalkerFindpred
+TestDensityEstimateUniform_Revisedv1 -> WalkerFindpred
+TestDensityMexicoPopulation -> WalkerFindpred
+TestDensityMexicoPopulationShifted -> WalkerFindpred
+WalkerPostProcessingFinal -> WalkerFindpred
+
+WalkerBivarDirichlet -> WalkerUpdatec -> WalkerLogLikc
+}
