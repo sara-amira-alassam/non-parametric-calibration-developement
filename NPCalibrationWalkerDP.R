@@ -11,6 +11,7 @@ source("WalkerDirichletMixtureUpdateFunsFinal.R") # This also reads in the slice
 source("NealDirichletMixtureMasterFunctionsFinal.R")
 source("WalkerMasterFunctionFinal.R")
 source("SimStudyFuncsFinal.R")
+source("WalkerPostProcessingFinal.R")
 
 # Read in data
 # x - c14ages
@@ -85,8 +86,7 @@ SPD <- data.frame(
   prob = apply(indprobs, 1, sum) / dim(indprobs)[2]
 )
 
-# To plot the predictive distribution then you run
-source("WalkerPostProcessingFinal.R")
+plot_final_graphs(WalkerTemp, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, SPD, x, xsig)
 
 # If we want to plot e.g. the posterior calendar age density against the curve then we can run the below
 # ident is the determination you want to calibrate
