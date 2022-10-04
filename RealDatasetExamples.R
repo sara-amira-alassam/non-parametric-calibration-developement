@@ -14,13 +14,11 @@ source("WalkerDirichletMixtureUpdateFunsFinal.R") # This also reads in the slice
 source("NealDirichletMixtureMasterFunctionsFinal.R")
 source("WalkerMasterFunctionFinal.R")
 source("SimStudyFuncsFinal.R")
+source("WalkerPostProcessingFinal.R")
 
-# Choose number of iterations for sampler
-niter <- 100000
-nthin <- 10 # Ensure that (niter/nthin)/2 is not too small (this is max posterior sample)
 
 ##### Read in the data
-ExampleSet <- "Armit"
+ExampleSet <- "Buchanan"
 
 if (ExampleSet == "Kerr") {
   Kerr <- read.csv("RealDatasets/kerr2014sss_sup.csv", header = FALSE, sep = ",")
@@ -72,6 +70,11 @@ nu2 <- nu1 / tempprec
 # Setup the NP method
 lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
 
+# Choose number of iterations for sampler
+niter <- 1000
+nthin <- 5 # Ensure that (niter/nthin)/2 is not too small (this is max posterior sample)
+npostsum <- 1000 # Current number of samples it will draw from this posterior to estimate fhat (possibly repeats)
+
 # Run the Walekr slice sampler
 WalkerTemp <- WalkerBivarDirichlet(
   x = x, xsig = xsig,
@@ -102,12 +105,5 @@ SPD <- data.frame(
   prob = apply(indprobs, 1, sum) / dim(indprobs)[2]
 )
 
-source("RealExamplesWalkerPostProcessingFinal.R")
 
-if (ExampleSet == "Kerr") {
-  save.image(file = "KerrNPBayesWalker.RData")
-} else if (ExampleSet == "Buchanan") {
-  save.image(file = "BuchananNPBayes.RData")
-} else if (ExampleSet == "Armit") {
-  save.image(file = "ArmitNPBayes.RData")
-}
+plot_final_graphs(WalkerTemp, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, SPD, x, xsig)

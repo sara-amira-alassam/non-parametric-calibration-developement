@@ -7,12 +7,13 @@ plot_final_graphs <- function(Temp, npostsum, calcurve, lambda, nu1, nu2, postde
   SPDcol <- grey(0.1, alpha = 0.5)
 
   # Create the range over which to plot the density
-  # (note we will have to rescale the pdfs to account for calculation grid)
-  ncalc <- 1001
+  # Note since tempx is not seq(T_a, T_b, 1) (i.e. spaced every year) then
+  # sum(postdenCI) != 1
+  # We should have sum(postdenCI) * gridgap = 1 (where gridgap is the spacing in tempx)
   tempx <- seq(
     floor(min(Temp$theta, na.rm = TRUE)),
     ceiling(max(Temp$theta, na.rm = TRUE)),
-    length = ncalc
+    by = 1,
   )
 
   # Now choose the ids of the posterior sample
@@ -41,43 +42,52 @@ plot_final_graphs <- function(Temp, npostsum, calcurve, lambda, nu1, nu2, postde
   ) # Widths of the two columns
 
   # Plot the predictive joint density
+  xlim <- rev(range(tempx))
+  ylim <- range(x) + c(-2, 2) * quantile(xsig, 0.9)
+  denscale <- 1.2
   par(mar = c(5, 4.5, 4, 2) + 0.1, las = 1)
-  plot(calcurve$calage, calcurve$c14age,
+  plot(
+    calcurve$calage,
+    calcurve$c14age,
     col = "blue",
-    ylim = range(x) + c(-2, 2) * max(xsig), xlim = rev(range(tempx)),
-    xlab = "Calendar Age (cal yr BP)", ylab = expression(paste(""^14, "C", " age (", ""^14, "C yr BP)")),
-    type = "l", main = expression(paste(""^14, "C Calibration - Walker DP"))
+    ylim = ylim,
+    xlim = xlim,
+    xlab = "Calendar Age (cal yr BP)",
+    ylab = expression(paste(""^14, "C", " age (", ""^14, "C yr BP)")),
+    type = "l",
+    main = expression(paste(""^14, "C Calibration - Walker DP")),
   )
   calcurve$ub <- calcurve$c14age + 1.96 * calcurve$c14sig
   calcurve$lb <- calcurve$c14age - 1.96 * calcurve$c14sig
   lines(calcurve$calage, calcurve$ub, lty = 2, col = "blue")
   lines(calcurve$calage, calcurve$lb, lty = 2, col = "blue")
-  polygon(c(rev(calcurve$calage), calcurve$calage), c(rev(calcurve$lb), calcurve$ub), col = rgb(0, 0, 1, .3), border = NA)
+  polygon(
+    c(rev(calcurve$calage), calcurve$calage),
+    c(rev(calcurve$lb), calcurve$ub),
+    col = rgb(0, 0, 1, .3),
+    border = NA,
+  )
   rug(x, side = 2)
+
+  # Plot the SPD and DPMM density along the bottom
+  par(new = TRUE, las = 1)
+  plot(tempx, postden,
+       lty = 1, col = "purple", type = "n",
+       ylim = c(0, denscale * max(postdenCI)), xlim = xlim,
+       axes = FALSE, xlab = NA, ylab = NA
+  )
+  polygon(c(SPD$calage, rev(SPD$calage)), c(SPD$prob, rep(0, length(SPD$prob))),
+          border = NA, col = SPDcol
+  )
+  lines(tempx, postden, col = "purple")
+  lines(tempx, postdenCI[1, ], col = "purple", lty = 2)
+  lines(tempx, postdenCI[2, ], col = "purple", lty = 2)
+  mtext(paste0("(", letters[1], ")"), side = 3, adj = 0.05, line = -1.1)
 
   legend("topright",
     legend = c("IntCal20", "NP Density Estimate - Walker", "95% Prob. Interval", "SPD Estimate"),
     lty = c(1, 1, 2, -1), pch = c(NA, NA, NA, 15),
     col = c("blue", "purple", "black", SPDcol), cex = 0.8, pt.cex = 2
-  )
-
-  # Plot the SPD and DPMM density along the bottom
-  par(new = TRUE, las = 1)
-  plot(tempx, postden,
-    lty = 1, col = "purple", type = "n",
-    ylim = c(0, 2 * max(postdenCI)), xlim = rev(range(tempx)),
-    axes = FALSE, xlab = NA, ylab = NA
-  )
-  polygon(c(SPD$calage, rev(SPD$calage)), c(SPD$prob, rep(0, length(SPD$prob))),
-    border = NA, col = SPDcol
-  )
-  lines(tempx, postden, col = "purple")
-  lines(tempx, postdenCI[1, ], col = "purple", lty = 2)
-  lines(tempx, postdenCI[2, ], col = "purple", lty = 2)
-  # axis(side = 4, at = axTicks(4)/2, col = "purple", col.ticks = "purple")
-  mtext(paste0("(", letters[1], ")"),
-    side = 2, adj = 0.05,
-    line = -1.1
   )
 
   # Plot the number of clusters
