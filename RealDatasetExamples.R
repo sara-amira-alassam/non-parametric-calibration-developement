@@ -105,4 +105,4 @@ SPD <- data.frame(
 )
 
 
-plot_final_graphs(WalkerTemp, NULL, SPD, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)
+post_process_and_plot(WalkerTemp, NULL, SPD, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)

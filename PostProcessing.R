@@ -1,8 +1,8 @@
 # This code will plot the predictive density for Walker
 
-plot_final_graphs <- function(WalkerTemp, NealTemp, SPD, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig) {
+post_process_and_plot <- function(WalkerTemp, NealTemp, SPD, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig) {
   SPD_colour <- grey(0.1, alpha = 0.5)
-  calibration_curve_color <- "blue"
+  calibration_curve_colour <- "blue"
   walker_colour <- "purple"
   neal_colour <- "orange"
 
@@ -13,30 +13,15 @@ plot_final_graphs <- function(WalkerTemp, NealTemp, SPD, npostsum, calcurve, lam
   denscale <- 2.5
 
   create_plot_layout()
-  plot_calibration_curve_and_data(xlim, ylim, calcurve, calibration_curve_color)
+  plot_calibration_curve_and_data(xlim, ylim, calcurve, x, calibration_curve_colour)
 
   # Plot the SPD and DPMM density along the bottom
-  par(new = TRUE)
-  plot(SPD$calage, SPD$prob,
-       lty = 1, col = walker_colour, type = "n",
-       ylim = c(0, denscale * max(SPD$prob)), xlim = xlim,
-       axes = FALSE, xlab = NA, ylab = NA
-  )
-  polygon(c(SPD$calage, rev(SPD$calage)), c(SPD$prob, rep(0, length(SPD$prob))),
-          border = NA, col = SPD_colour
-  )
-
+  plot_SPD_estimate_on_current_plot(SPD, SPD_colour, denscale, xlim)
   if (!is.null(WalkerTemp)) {
-    plot_walker_density_estimate(walker_colour, WalkerTemp, tempx, npostsum, lambda, nu1, nu2)
+    add_walker_density_estimate(walker_colour, WalkerTemp, tempx, npostsum, lambda, nu1, nu2)
   }
-
+  add_legend_to_density_plot(WalkerTemp, NealTemp, calibration_curve_colour, walker_colour, neal_colour, SPD_colour)
   mtext(paste0("(", letters[1], ")"), side = 3, adj = 0.05, line = -1.1)
-
-  legend("topright",
-         legend = c("IntCal20", "NP Density Estimate - Walker", "95% Prob. Interval", "SPD Estimate"),
-         lty = c(1, 1, 2, -1), pch = c(NA, NA, NA, 15),
-         col = c(calibration_curve_color, walker_colour, walker_colour, SPD_colour), cex = 0.8, pt.cex = 2
-  )
 
   plot_number_of_walker_clusters(WalkerTemp)
 }
@@ -75,7 +60,7 @@ create_plot_layout <- function() {
 }
 
 
-plot_calibration_curve_and_data <- function(xlim, ylim, calcurve, calibration_curve_colour) {
+plot_calibration_curve_and_data <- function(xlim, ylim, calcurve, x, calibration_curve_colour) {
   par(mar = c(5, 4.5, 4, 2) + 0.1, las = 1)
   plot(
     calcurve$calage,
@@ -102,7 +87,20 @@ plot_calibration_curve_and_data <- function(xlim, ylim, calcurve, calibration_cu
 }
 
 
-plot_walker_density_estimate <- function(walker_colour, WalkerTemp, tempx, npostsum, lambda, nu1, nu2) {
+plot_SPD_estimate_on_current_plot <- function(SPD, SPD_colour, denscale, xlim) {
+  par(new = TRUE)
+  plot(SPD$calage, SPD$prob,
+       lty = 1, col = SPD_colour, type = "n",
+       ylim = c(0, denscale * max(SPD$prob)), xlim = xlim,
+       axes = FALSE, xlab = NA, ylab = NA
+  )
+  polygon(c(SPD$calage, rev(SPD$calage)), c(SPD$prob, rep(0, length(SPD$prob))),
+          border = NA, col = SPD_colour
+  )
+}
+
+
+add_walker_density_estimate <- function(walker_colour, WalkerTemp, tempx, npostsum, lambda, nu1, nu2) {
   postDmat <- find_density_per_sample_id_walker(WalkerTemp, tempx, npostsum, lambda, nu1, nu2)
   # Find CI and mean of density along each row
   postdenCI_walker <- apply(postDmat, 1, quantile, probs = c(0.025, 0.975))
@@ -134,6 +132,29 @@ find_density_per_sample_id_walker <- function(WalkerTemp, tempx, npostsum, lambd
     out = WalkerTemp, x = tempx, lambda = lambda, nu1 = nu1, nu2 = nu2
   )
   return(postDmat)
+}
+
+
+add_legend_to_density_plot <- function(WalkerTemp, NealTemp, calibration_curve_colour, walker_colour, neal_colour, SPD_colour) {
+  legend_labels = "IntCal20"
+  lty = 1
+  pch = NA
+  col = calibration_curve_colour
+
+  if (!is.null(WalkerTemp)) {
+    legend_labels <- c(legend_labels, "Walker DP", "Walker 95% prob interval")
+    lty <- c(lty, 1, 2)
+    pch <- c(pch, NA, NA)
+    col <- c(col, walker_colour, walker_colour)
+  }
+
+  legend_labels <- c(legend_labels, "SPD Estimate")
+  lty <- c(lty, -1)
+  pch <- c(pch, 15)
+  col <- c(col, SPD_colour)
+
+
+  legend("topright", legend = legend_labels, lty = lty, pch = pch, col = col)
 }
 
 

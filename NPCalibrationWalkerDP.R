@@ -86,7 +86,7 @@ SPD <- data.frame(
   prob = apply(indprobs, 1, sum) / dim(indprobs)[2]
 )
 
-plot_final_graphs(WalkerTemp, NULL, SPD, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)
+post_process_and_plot(WalkerTemp, NULL, SPD, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)
 
 # If we want to plot e.g. the posterior calendar age density against the curve then we can run the below
 # ident is the determination you want to calibrate
