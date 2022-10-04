@@ -45,7 +45,7 @@ x <- rnorm(nobs, mean = xcalcurve, sd = xsig)
 # Now run the Walker Sampler
 ###############################################
 # Choose number of iterations for sampler
-niter <- 50000 # 10000 # 10000
+niter <- 1000 # 10000 # 10000
 nthin <- 5
 
 ############################################################################

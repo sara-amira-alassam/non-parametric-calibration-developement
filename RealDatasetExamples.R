@@ -14,8 +14,7 @@ source("WalkerDirichletMixtureUpdateFunsFinal.R") # This also reads in the slice
 source("NealDirichletMixtureMasterFunctionsFinal.R")
 source("WalkerMasterFunctionFinal.R")
 source("SimStudyFuncsFinal.R")
-source("WalkerPostProcessingFinal.R")
-
+source("PostProcessing.R")
 
 ##### Read in the data
 ExampleSet <- "Buchanan"

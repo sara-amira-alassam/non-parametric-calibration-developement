@@ -19,7 +19,8 @@ plot_final_graphs <- function(Temp, npostsum, calcurve, lambda, nu1, nu2, postde
   # Now choose the ids of the posterior sample
   sampid <- sample(x = nburn:npost, size = npostsum, replace = npostsum > (npost - nburn))
 
-  # Now work out the actual posterior predictive density
+  # Create a matrix where each column is the density for a particular sample id
+  # We can then find the mean along each row
   postDmat <- apply(as.row(sampid), 2, function(i, out, x, lambda, nu1, nu2) {
     WalkerFindpred(x,
       w = out$w[[i]], phi = out$phi[[i]], tau = out$tau[[i]],
