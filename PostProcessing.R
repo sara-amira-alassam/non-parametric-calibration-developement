@@ -1,16 +1,35 @@
-# This code will plot the predictive density for Walker
 
-post_process_and_plot <- function(WalkerTemp, NealTemp, SPD, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig) {
+find_spd_estimate <- function(yrange, x, xsig, calcurve) {
+  yfromto <- seq(max(0, yrange[1] - 400), min(50000, yrange[2] + 400), by = 1)
+
+  # Find the calibration curve mean and sd over the yrange
+  CurveR <- FindCalCurve(yfromto, calcurve)
+
+  # Now we want to apply to each radiocarbon determination
+  # Matrix where each column represents the posterior probability of each theta in yfromto
+  indprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = CurveR$curvemean, calsig = CurveR$curvesd))
+
+  # Find the SPD estimate (save as dataframe)
+  SPD <- data.frame(
+    calage = yfromto,
+    prob = apply(indprobs, 1, sum) / dim(indprobs)[2]
+  )
+
+  return(SPD)
+}
+
+
+post_process_and_plot <- function(WalkerTemp, NealTemp, SPD, true_density, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig) {
   SPD_colour <- grey(0.1, alpha = 0.5)
   calibration_curve_colour <- "blue"
   walker_colour <- "purple"
-  neal_colour <- "orange"
+  neal_colour <- "forestgreen"
 
   tempx <- create_range_to_plot_density(WalkerTemp, NealTemp)
 
   xlim <- rev(range(tempx))
   ylim <- range(x) + c(-2, 2) * quantile(xsig, 0.9)
-  denscale <- 2.5
+  denscale <- 3
 
   create_plot_layout()
   plot_calibration_curve_and_data(xlim, ylim, calcurve, x, calibration_curve_colour)
@@ -20,10 +39,18 @@ post_process_and_plot <- function(WalkerTemp, NealTemp, SPD, npostsum, calcurve,
   if (!is.null(WalkerTemp)) {
     add_walker_density_estimate(walker_colour, WalkerTemp, tempx, npostsum, lambda, nu1, nu2)
   }
+  if (!is.null(NealTemp)) {
+    add_neal_density_estimate(neal_colour, NealTemp, tempx, npostsum, lambda, nu1, nu2)
+  }
   add_legend_to_density_plot(WalkerTemp, NealTemp, calibration_curve_colour, walker_colour, neal_colour, SPD_colour)
   mtext(paste0("(", letters[1], ")"), side = 3, adj = 0.05, line = -1.1)
 
-  plot_number_of_walker_clusters(WalkerTemp)
+  if (!is.null(WalkerTemp)) {
+    plot_number_of_walker_clusters(WalkerTemp)
+  }
+  if (!is.null(NealTemp)) {
+    plot_number_of_neal_clusters(NealTemp)
+  }
 }
 
 
@@ -135,6 +162,39 @@ find_density_per_sample_id_walker <- function(WalkerTemp, tempx, npostsum, lambd
 }
 
 
+add_neal_density_estimate <- function(neal_colour, NealTemp, tempx, npostsum, lambda, nu1, nu2) {
+  postDmat <- find_density_per_sample_id_neal(NealTemp, tempx, npostsum, lambda, nu1, nu2)
+  # Find CI and mean of density along each row
+  postdenCI_neal <- apply(postDmat, 1, quantile, probs = c(0.025, 0.975))
+  postden_neal <- apply(postDmat, 1, mean)
+
+  lines(tempx, postden_neal, col = neal_colour)
+  lines(tempx, postdenCI_neal[1, ], col = neal_colour, lty = 2)
+  lines(tempx, postdenCI_neal[2, ], col = neal_colour, lty = 2)
+}
+
+
+find_density_per_sample_id_neal <- function(NealTemp, tempx, npostsum, lambda, nu1, nu2) {
+  npost <- dim(NealTemp$theta)[1]
+  nburn <- floor(npost / 2)
+
+  # Now choose the ids of the posterior sample
+  sampid <- sample(x = nburn:npost, size = npostsum, replace = npostsum > (npost - nburn))
+
+  # Create a matrix where each column is the density for a particular sample id
+  postDmat <- apply(as.row(sampid), 2, function(i, out, x, lambda, nu1, nu2) {
+    NealFindpred(x,
+                 c = out$c[i, ], phi = out$phi[[i]], tau = out$tau[[i]],
+                 alpha = out$alpha[i], muphi = out$muphi[i],
+                 lambda = lambda, nu1 = nu1, nu2 = nu2
+    )
+  },
+  out = NealTemp, x = tempx, lambda = lambda, nu1 = nu1, nu2 = nu2
+  )
+  return(postDmat)
+}
+
+
 add_legend_to_density_plot <- function(WalkerTemp, NealTemp, calibration_curve_colour, walker_colour, neal_colour, SPD_colour) {
   legend_labels = "IntCal20"
   lty = 1
@@ -147,6 +207,12 @@ add_legend_to_density_plot <- function(WalkerTemp, NealTemp, calibration_curve_c
     pch <- c(pch, NA, NA)
     col <- c(col, walker_colour, walker_colour)
   }
+  if (!is.null(NealTemp)) {
+    legend_labels <- c(legend_labels, "Neal DP", "Neal 95% prob interval")
+    lty <- c(lty, 1, 2)
+    pch <- c(pch, NA, NA)
+    col <- c(col, neal_colour, neal_colour)
+  }
 
   legend_labels <- c(legend_labels, "SPD Estimate")
   lty <- c(lty, -1)
@@ -158,12 +224,11 @@ add_legend_to_density_plot <- function(WalkerTemp, NealTemp, calibration_curve_c
 }
 
 
-plot_number_of_walker_clusters <- function(Temp) {
-
-  npost <- dim(Temp$delta)[1]
+plot_number_of_walker_clusters <- function(WalkerTemp) {
+  npost <- dim(WalkerTemp$delta)[1]
   nburn <- floor(npost / 2)
 
-  WalkerNClust <- apply(Temp$delta, 1, function(x) length(unique(x)))
+  WalkerNClust <- apply(WalkerTemp$delta, 1, function(x) length(unique(x)))
   WalkerNClust <- WalkerNClust[nburn:npost]
   hist(WalkerNClust,
        xlab = "Number of Clusters", main = "",
@@ -173,5 +238,21 @@ plot_number_of_walker_clusters <- function(Temp) {
         side = 3, adj = 1,
         line = -1.1
   )
+}
 
+
+plot_number_of_neal_clusters <- function(NealTemp) {
+  npost <- dim(NealTemp$theta)[1]
+  nburn <- floor(npost / 2)
+
+  NealNClust <- apply(NealTemp$c, 1, max)
+  NealNClust <- NealNClust[nburn:npost]
+  hist(NealNClust,
+       xlab = "Number of Clusters", main = "",
+       probability = TRUE, breaks = seq(0.5, max(NealNClust) + 1, by = 1)
+  )
+  mtext(paste0("(", letters[2], ")"),
+        side = 3, adj = 1,
+        line = -1.1
+  )
 }

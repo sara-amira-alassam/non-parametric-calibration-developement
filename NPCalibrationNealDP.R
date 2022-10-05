@@ -16,6 +16,7 @@ source("WalkerDirichletMixtureUpdateFunsFinal.R") # This also reads in the slice
 source("NealDirichletMixtureMasterFunctionsFinal.R")
 source("WalkerMasterFunctionFinal.R")
 source("SimStudyFuncsFinal.R")
+source("PostProcessing.R")
 
 # Read in data
 # x - c14ages
@@ -57,7 +58,7 @@ lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
 
 
 # Choose number of iterations for sampler
-niter <- 50000
+niter <- 1000
 nthin <- 5 # Don't choose too high, after burn-in we have (niter/nthin)/2 samples from posterior to potentially use
 npostsum <- 5000 # Current number of samples it will draw from this posterior to estimate fhat (possibly repeats)
 
@@ -72,30 +73,9 @@ NealTemp <- BivarGibbsDirichletwithSlice(
   calcurve = calcurve, nclusinit = 10
 )
 
+SPD <- find_spd_estimate(yrange=floor(range(NealTemp$theta)), x, xsig, calcurve)
 
-##############################
-# Also find the SPD estimate to plot alongside
-##############################
-# Find the independent calibration probabilities
-yrange <- floor(range(NealTemp$theta))
-yfromto <- seq(max(0, yrange[1] - 400), min(50000, yrange[2] + 400), by = 1)
-
-# Find the calibration curve mean and sd over the yrange
-CurveR <- FindCalCurve(yfromto, calcurve)
-
-# Now we want to apply to each radiocarbon determination
-# Matrix where each column represents the posterior probability of each theta in yfromto
-indprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = CurveR$curvemean, calsig = CurveR$curvesd))
-
-# Find the SPD estimate (save as dataframe)
-SPD <- data.frame(
-  calage = yfromto,
-  prob = apply(indprobs, 1, sum) / dim(indprobs)[2]
-)
-
-
-# To plot the predictive distribution then you run
-source("NealPostProcessingFinal.R")
+post_process_and_plot(NULL, NealTemp, SPD, NULL, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)
 
 # If we want to plot e.g. the posterior calendar age density against the curve then we can run the below
 # ident is the determination you want to calibrate

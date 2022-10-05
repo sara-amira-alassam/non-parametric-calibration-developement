@@ -84,25 +84,6 @@ WalkerTemp <- WalkerBivarDirichlet(
   slicew = max(1000, diff(range(x)) / 2), m = 10, calcurve = calcurve, kstar = 10
 )
 
-##############################
-# Also find the SPD estimate to plot alongside
-##############################
-# Find the independent calibration probabilities
-yrange <- floor(range(WalkerTemp$theta))
-yfromto <- seq(max(0, yrange[1] - 400), min(50000, yrange[2] + 400), by = 1)
+SPD <- find_spd_estimate(yrange=floor(range(WalkerTemp$theta)), x, xsig, calcurve)
 
-# Find the calibration curve mean and sd over the yrange
-CurveR <- FindCalCurve(yfromto, calcurve)
-
-# Now we want to apply to each radiocarbon determination
-# Matrix where each column represents the posterior probability of each theta in yfromto
-indprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = CurveR$curvemean, calsig = CurveR$curvesd))
-
-# Find the SPD estimate (save as dataframe)
-SPD <- data.frame(
-  calage = yfromto,
-  prob = apply(indprobs, 1, sum) / dim(indprobs)[2]
-)
-
-
-post_process_and_plot(WalkerTemp, NULL, SPD, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)
+post_process_and_plot(WalkerTemp, NULL, SPD, NULL, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)

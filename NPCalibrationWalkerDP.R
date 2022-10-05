@@ -53,7 +53,7 @@ lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
 
 
 # Choose number of iterations for sampler
-niter <- 5000
+niter <- 1000
 nthin <- 5 # Don't choose too high, after burn-in we have (niter/nthin)/2 samples from posterior to potentially use
 npostsum <- 5000 # Current number of samples it will draw from this posterior to estimate fhat (possibly repeats)
 
@@ -66,27 +66,9 @@ WalkerTemp <- WalkerBivarDirichlet(
   slicew = max(1000, diff(range(x)) / 2), m = 10, calcurve = calcurve, kstar = 10
 )
 
-##############################
-# Also find the SPD estimate to plot alongside
-##############################
-# Find the independent calibration probabilities
-yrange <- floor(range(WalkerTemp$theta))
-yfromto <- seq(max(0, yrange[1] - 400), min(50000, yrange[2] + 400), by = 1)
+SPD <- find_spd_estimate(yrange=floor(range(WalkerTemp$theta)), x, xsig, calcurve)
 
-# Find the calibration curve mean and sd over the yrange
-CurveR <- FindCalCurve(yfromto, calcurve)
-
-# Now we want to apply to each radiocarbon determination
-# Matrix where each column represents the posterior probability of each theta in yfromto
-indprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = CurveR$curvemean, calsig = CurveR$curvesd))
-
-# Find the SPD estimate (save as dataframe)
-SPD <- data.frame(
-  calage = yfromto,
-  prob = apply(indprobs, 1, sum) / dim(indprobs)[2]
-)
-
-post_process_and_plot(WalkerTemp, NULL, SPD, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)
+post_process_and_plot(WalkerTemp, NULL, SPD, NULL, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)
 
 # If we want to plot e.g. the posterior calendar age density against the curve then we can run the below
 # ident is the determination you want to calibrate
