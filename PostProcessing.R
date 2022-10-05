@@ -19,19 +19,21 @@ find_spd_estimate <- function(yrange, x, xsig, calcurve) {
 }
 
 
-post_process_and_plot <- function(WalkerTemp, NealTemp, SPD, true_density, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig) {
+post_process_and_plot <- function(
+    WalkerTemp, NealTemp, SPD, true_density, npostsum, calcurve, lambda, nu1, nu2, x, xsig,
+    xlimscal = 1, ylimscal=1, denscale=3) {
   SPD_colour <- grey(0.1, alpha = 0.5)
   calibration_curve_colour <- "blue"
   walker_colour <- "purple"
   neal_colour <- "forestgreen"
+  true_density_colour <- "red"
 
   tempx <- create_range_to_plot_density(WalkerTemp, NealTemp)
 
-  xlim <- rev(range(tempx))
-  ylim <- range(x) + c(-2, 2) * quantile(xsig, 0.9)
-  denscale <- 3
+  xlim <- scale_limit(rev(range(tempx)), xlimscal)
+  ylim <- scale_limit(range(x) + c(-2, 2) * quantile(xsig, 0.9), ylimscal)
 
-  create_plot_layout()
+  create_plot_layout(WalkerTemp, NealTemp)
   plot_calibration_curve_and_data(xlim, ylim, calcurve, x, calibration_curve_colour)
 
   # Plot the SPD and DPMM density along the bottom
@@ -42,14 +44,21 @@ post_process_and_plot <- function(WalkerTemp, NealTemp, SPD, true_density, npost
   if (!is.null(NealTemp)) {
     add_neal_density_estimate(neal_colour, NealTemp, tempx, npostsum, lambda, nu1, nu2)
   }
-  add_legend_to_density_plot(WalkerTemp, NealTemp, calibration_curve_colour, walker_colour, neal_colour, SPD_colour)
+  if (!is.null(true_density)) {
+    lines(true_density$x, true_density$y, col = true_density_colour)
+  }
+  add_legend_to_density_plot(
+    WalkerTemp, NealTemp, true_density, calibration_curve_colour, walker_colour, neal_colour,
+    true_density_colour, SPD_colour)
   mtext(paste0("(", letters[1], ")"), side = 3, adj = 0.05, line = -1.1)
 
+  plot_index <- 2
   if (!is.null(WalkerTemp)) {
     plot_number_of_walker_clusters(WalkerTemp)
+    plot_index <-3
   }
   if (!is.null(NealTemp)) {
-    plot_number_of_neal_clusters(NealTemp)
+    plot_number_of_neal_clusters(NealTemp, plot_index)
   }
 }
 
@@ -76,14 +85,31 @@ create_range_to_plot_density <- function(WalkerTemp, NealTemp) {
 }
 
 
-create_plot_layout <- function() {
-  # Create a layout with 2/3 showing the predictive density 1/3 showing the number of clusters
-  layout.matrix <- matrix(c(1, 2), nrow = 1, ncol = 2)
-  layout(
-    mat = layout.matrix,
-    heights = c(1),
-    widths = c(10, 4.5)
-  )
+scale_limit <- function(lim, limscal) {
+  lim <- lim + c(1, -1) * diff(lim) * (1 - limscal)
+  return(lim)
+}
+
+
+create_plot_layout <- function(WalkerTemp, NealTemp) {
+  if (!is.null(WalkerTemp) && !is.null(NealTemp)) {
+    # Create a layout with 2/3 showing the predictive density 1/3*1/2 showing the number of clusters
+    # for each method
+    layout.matrix <- matrix(c(1, 1, 2, 3), nrow = 2, ncol = 2)
+    layout(
+      mat = layout.matrix,
+      heights = c(3, 3),
+      widths = c(10, 4.5)
+    )
+  } else {
+    # Create a layout with 2/3 showing the predictive density 1/3 showing the number of clusters
+    layout.matrix <- matrix(c(1, 2), nrow = 1, ncol = 2)
+    layout(
+      mat = layout.matrix,
+      heights = c(1),
+      widths = c(10, 4.5)
+    )
+  }
 }
 
 
@@ -98,7 +124,7 @@ plot_calibration_curve_and_data <- function(xlim, ylim, calcurve, x, calibration
     xlab = "Calendar Age (cal yr BP)",
     ylab = expression(paste(""^14, "C", " age (", ""^14, "C yr BP)")),
     type = "l",
-    main = expression(paste(""^14, "C Calibration - Walker DP")),
+    main = expression(paste(""^14, "C Calibration")),
   )
   calcurve$ub <- calcurve$c14age + 1.96 * calcurve$c14sig
   calcurve$lb <- calcurve$c14age - 1.96 * calcurve$c14sig
@@ -195,12 +221,19 @@ find_density_per_sample_id_neal <- function(NealTemp, tempx, npostsum, lambda, n
 }
 
 
-add_legend_to_density_plot <- function(WalkerTemp, NealTemp, calibration_curve_colour, walker_colour, neal_colour, SPD_colour) {
+add_legend_to_density_plot <- function(
+    WalkerTemp, NealTemp, true_density, calibration_curve_colour, walker_colour, neal_colour,
+    true_density_colour, SPD_colour) {
   legend_labels = "IntCal20"
   lty = 1
   pch = NA
   col = calibration_curve_colour
-
+  if (!is.null(true_density)) {
+    legend_labels <- c(legend_labels, "True density")
+    lty <- c(lty, 1)
+    pch <- c(pch, NA)
+    col <- c(col, true_density_colour)
+  }
   if (!is.null(WalkerTemp)) {
     legend_labels <- c(legend_labels, "Walker DP", "Walker 95% prob interval")
     lty <- c(lty, 1, 2)
@@ -231,7 +264,7 @@ plot_number_of_walker_clusters <- function(WalkerTemp) {
   WalkerNClust <- apply(WalkerTemp$delta, 1, function(x) length(unique(x)))
   WalkerNClust <- WalkerNClust[nburn:npost]
   hist(WalkerNClust,
-       xlab = "Number of Clusters", main = "",
+       xlab = "Number of Clusters", main = "Walker - Slice Sample DP",
        probability = TRUE, breaks = seq(0.5, max(WalkerNClust) + 1, by = 1)
   )
   mtext(paste0("(", letters[2], ")"),
@@ -241,17 +274,17 @@ plot_number_of_walker_clusters <- function(WalkerTemp) {
 }
 
 
-plot_number_of_neal_clusters <- function(NealTemp) {
+plot_number_of_neal_clusters <- function(NealTemp, plot_index) {
   npost <- dim(NealTemp$theta)[1]
   nburn <- floor(npost / 2)
 
   NealNClust <- apply(NealTemp$c, 1, max)
   NealNClust <- NealNClust[nburn:npost]
   hist(NealNClust,
-       xlab = "Number of Clusters", main = "",
+       xlab = "Number of Clusters", main = "Neal - P\u{F2}lya Urn DP",
        probability = TRUE, breaks = seq(0.5, max(NealNClust) + 1, by = 1)
   )
-  mtext(paste0("(", letters[2], ")"),
+  mtext(paste0("(", letters[plot_index], ")"),
         side = 3, adj = 1,
         line = -1.1
   )

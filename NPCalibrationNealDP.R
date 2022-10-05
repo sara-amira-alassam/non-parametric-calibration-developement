@@ -75,7 +75,7 @@ NealTemp <- BivarGibbsDirichletwithSlice(
 
 SPD <- find_spd_estimate(yrange=floor(range(NealTemp$theta)), x, xsig, calcurve)
 
-post_process_and_plot(NULL, NealTemp, SPD, NULL, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)
+post_process_and_plot(NULL, NealTemp, SPD, NULL, npostsum, calcurve, lambda, nu1, nu2, x, xsig)
 
 # If we want to plot e.g. the posterior calendar age density against the curve then we can run the below
 # ident is the determination you want to calibrate

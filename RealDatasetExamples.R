@@ -86,4 +86,4 @@ WalkerTemp <- WalkerBivarDirichlet(
 
 SPD <- find_spd_estimate(yrange=floor(range(WalkerTemp$theta)), x, xsig, calcurve)
 
-post_process_and_plot(WalkerTemp, NULL, SPD, NULL, npostsum, calcurve, lambda, nu1, nu2, postden, postdenCI, x, xsig)
+post_process_and_plot(WalkerTemp, NULL, SPD, NULL, npostsum, calcurve, lambda, nu1, nu2, x, xsig)
