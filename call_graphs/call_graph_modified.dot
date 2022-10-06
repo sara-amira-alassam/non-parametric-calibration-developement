@@ -2,31 +2,23 @@ digraph xyz {
 rankdir=TB;
 NPCalibrationWalker[shape=box, fillcolor="#FFFF00", style=filled]
 NPCalibrationNeal[shape=box, fillcolor="#FFFF00", style=filled]
-SimulationStudy_Cluster[shape=box, fillcolor="#FFFF00", style=filled]
-SimulationStudyUniform[shape=box, fillcolor="#FFFF00", style=filled]
-TestDensityEstimateUniform[shape=box, fillcolor="#FFFF00", style=filled]
-TestDensity_others[shape=box, fillcolor="#FFFF00", style=filled]
+TestDensity_all[shape=box, fillcolor="#FFFF00", style=filled]
 RealDatasetExamples[shape=box, fillcolor="#FFFF00", style=filled]
-NealPostProcessing[shape=ellipse, fillcolor="#CCFFFF", style=filled]
-WalkerPostProcessing[shape=ellipse, fillcolor="#CCFFFF", style=filled]
 as_row[shape=ellipse]
 BivarGibbsDirichletwithSlice[shape=ellipse, fillcolor="#CCFFFF", style=filled]
 BivarUpdatec[shape=ellipse]
 BivarUpdatephitau[shape=ellipse]
-calibind[shape=ellipse]
-CreateDataVaryWeight[shape=ellipse, fillcolor="#CCFFFF", style=filled]
-CreateSingleUniformPhaseData[shape=ellipse, fillcolor="#CCFFFF", style=filled]
-CreateSPD[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+calibind[shape=ellipse, fillcolor="#CCFFFF", style=filled]
 DPWalkerUpdate[shape=ellipse]
-FindCal[shape=ellipse]
+FindCal[shape=ellipse, fillcolor="#CCFFFF", style=filled]
 FindCalCurve[shape=ellipse, fillcolor="#CCFFFF", style=filled]
-FindIndLoss[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+find_spd_estimate[shape=ellipse, fillcolor="#CCFFFF", style=filled]
 FindInterval[shape=ellipse]
-FindLoss[shape=ellipse, fillcolor="#CCFFFF", style=filled]
 LogLikalpha[shape=ellipse]
 Logmargnormgamma[shape=ellipse]
 MixtureDens[shape=ellipse]
-NealFindPred[shape=ellipse]
+NealFindpred[shape=ellipse]
+post_process_and_plot[shape=ellipse, fillcolor="#CCFFFF", style=filled]
 plotindpost[shape=ellipse, fillcolor="#CCFFFF", style=filled]
 PredNewDens[shape=ellipse]
 SamplefromInt[shape=ellipse]
@@ -37,38 +29,36 @@ Updatealphagammapr[shape=ellipse]
 Updatealphalognormpr[shape=ellipse]
 Updatemuphi[shape=ellipse]
 WalkerBivarDirichlet[shape=ellipse, fillcolor="#CCFFFF", style=filled]
-WalkerFindpred[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+WalkerFindpred[shape=ellipse]
 WalkerLogLikc[shape=ellipse]
 WalkerUpdatec[shape=ellipse]
 
 NPCalibrationWalker -> WalkerBivarDirichlet
 RealDatasetExamples -> WalkerBivarDirichlet
-SimulationStudy_Cluster -> WalkerBivarDirichlet
-SimulationStudyUniform -> WalkerBivarDirichlet
-TestDensity_others -> WalkerBivarDirichlet
-TestDensityEstimateUniform -> WalkerBivarDirichlet
-
-NPCalibrationWalker -> WalkerPostProcessing
-NPCalibrationNeal -> NealPostProcessing
-
-NealFindPred -> as_row
-TestDensityEstimateUniform -> as_row_temp
-TestDensity_others -> as_row_temp
-BivarUpdatec -> as_row
-LogLikalpha -> as_row
-WalkerPostProcessing -> as_row
-NealPostProcessing -> as_row
+TestDensity_all -> WalkerBivarDirichlet
 
 NPCalibrationNeal -> BivarGibbsDirichletwithSlice
-NPCalibrationWalker -> BivarGibbsDirichletwithSlice
-SimulationStudy_Cluster -> BivarGibbsDirichletwithSlice
-SimulationStudyUniform -> BivarGibbsDirichletwithSlice
-TestDensityEstimateUniform -> BivarGibbsDirichletwithSlice
-TestDensity_others -> BivarGibbsDirichletwithSlice
+TestDensity_all -> BivarGibbsDirichletwithSlice
 
-NealPostProcessing -> NealFindPred
-TestDensityEstimateUniform -> NealFindPred
-TestDensity_others -> NealFindPred
+NPCalibrationWalker -> post_process_and_plot
+RealDatasetExamples -> post_process_and_plot
+NPCalibrationNeal -> post_process_and_plot
+TestDensity_all -> post_process_and_plot
+
+NPCalibrationWalker -> find_spd_estimate
+RealDatasetExamples -> find_spd_estimate
+NPCalibrationNeal -> find_spd_estimate
+TestDensity_all -> find_spd_estimate
+
+find_spd_estimate -> FindCalCurve
+find_spd_estimate -> calibind
+
+post_process_and_plot -> WalkerFindpred
+post_process_and_plot -> NealFindpred
+
+NealFindpred -> as_row
+BivarUpdatec -> as_row
+LogLikalpha -> as_row
 
 BivarGibbsDirichletwithSlice -> BivarUpdatec
 
@@ -79,37 +69,18 @@ NPCalibrationNeal -> calibind
 NPCalibrationWalker -> calibind
 BivarGibbsDirichletwithSlice -> calibind
 RealDatasetExamples -> calibind
-SimulationStudy_Cluster -> calibind
-SimulationStudyUniform -> calibind
-TestDensityEstimateUniform -> calibind
-TestDensity_others -> calibind
-
-SimulationStudy_Cluster -> CreateDataVaryWeight
-
-TestDensityEstimateUniform -> CreateSingleUniformPhaseData
-SimulationStudyUniform -> CreateSingleUniformPhaseData
+TestDensity_all -> calibind
 
 WalkerBivarDirichlet -> DPWalkerUpdate
 
 BivarGibbsDirichletwithSlice -> FindCal
-CreateSingleUniformPhaseData -> FindCal
 
-TestDensityEstimateUniform -> FindCal
-TestDensity_others -> FindCal
+TestDensity_all -> FindCal
 
 NPCalibrationNeal -> FindCalCurve
 NPCalibrationWalker -> FindCalCurve
 RealDatasetExamples -> FindCalCurve
-SimulationStudy_Cluster -> FindCalCurve
-SimulationStudyUniform -> FindCalCurve
-TestDensityEstimateUniform -> FindCalCurve
-TestDensity_others -> FindCalCurve
-
-SimulationStudy_Cluster -> FindIndLoss
-SimulationStudyUniform -> FindIndLoss
-
-SimulationStudy_Cluster -> FindLoss
-SimulationStudyUniform -> FindLoss
+TestDensity_all -> FindCalCurve
 
 SliceSample -> FindInterval
 
@@ -118,14 +89,14 @@ Updatealphalognormpr -> LogLikalpha
 PredNewDens -> Logmargnormgamma
 BivarUpdatec -> Logmargnormgamma
 
-NealFindPred -> MixtureDens
-WalkerFindPred -> MixtureDens
+NealFindpred -> MixtureDens
+WalkerFindpred -> MixtureDens
 
 NPCalibrationNeal -> plotindpost
 NPCalibrationWalker -> plotindpost
 
-NealFindPred -> PredNewDens
-WalkerFindPred -> PredNewDens
+NealFindpred -> PredNewDens
+WalkerFindpred -> PredNewDens
 
 SliceSample -> SamplefromInt
 
@@ -143,9 +114,6 @@ BivarGibbsDirichletwithSlice -> Updatealphalognormpr
 
 BivarGibbsDirichletwithSlice -> Updatemuphi
 WalkerBivarDirichlet -> Updatemuphi
-
-TestDensityEstimateUniform -> WalkerFindpred
-TestDensity_others -> WalkerFindpred
 
 WalkerBivarDirichlet -> WalkerUpdatec -> WalkerLogLikc
 }
