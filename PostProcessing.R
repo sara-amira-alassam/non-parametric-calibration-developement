@@ -7,7 +7,9 @@ find_spd_estimate <- function(yrange, x, xsig, calcurve) {
 
   # Now we want to apply to each radiocarbon determination
   # Matrix where each column represents the posterior probability of each theta in yfromto
-  indprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = CurveR$curvemean, calsig = CurveR$curvesd))
+  # indprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = CurveR$curvemean, calsig = CurveR$curvesd))
+  calibration_data = data.frame(c14_age = CurveR$curvemean, c14_sig = CurveR$curvesd)
+  indprobs <- mapply(carbondate::CalibrateSingleDetermination, x, xsig, MoreArgs = list(calibration_data = calibration_data))
 
   # Find the SPD estimate (save as dataframe)
   SPD <- data.frame(

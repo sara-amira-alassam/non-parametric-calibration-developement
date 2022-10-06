@@ -11,6 +11,8 @@ set.seed(14)
 calcurve <- read.table("Curves/intcal20.14c", sep = ",", header = FALSE, skip = 11)
 names(calcurve) <- c("calage", "c14age", "c14sig", "Delta14C", "DeltaSigma")
 
+library(carbondate)
+
 # Read in the necessary functions
 source("WalkerDirichletMixtureUpdateFunsFinal.R") # This also reads in the slice sampling SliceUpdateFuns.R
 source("NealDirichletMixtureMasterFunctionsFinal.R")
@@ -38,7 +40,9 @@ cprrate <- alphaprrate <- 1
 
 #### Updated adaptive version
 # Prior on mu theta for DP - very uninformative based on observed data
-initprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = calcurve$c14age, calsig = calcurve$c14sig))
+# initprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = calcurve$c14age, calsig = calcurve$c14sig))
+calibration_data = data.frame(c14_age = calcurve$c14age, c14_sig = calcurve$c14sig)
+initprobs <- mapply(carbondate::CalibrateSingleDetermination, x, xsig, MoreArgs = list(calibration_data = calibration_data))
 inittheta <- calcurve$calage[apply(initprobs, 2, which.max)]
 # Choose A and B from range of theta
 A <- median(inittheta)
