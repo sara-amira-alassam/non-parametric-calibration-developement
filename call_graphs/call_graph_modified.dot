@@ -77,11 +77,6 @@ BivarGibbsDirichletwithSlice -> FindCal
 
 TestDensity_all -> FindCal
 
-NPCalibrationNeal -> FindCalCurve
-NPCalibrationWalker -> FindCalCurve
-RealDatasetExamples -> FindCalCurve
-TestDensity_all -> FindCalCurve
-
 SliceSample -> FindInterval
 
 Updatealphalognormpr -> LogLikalpha

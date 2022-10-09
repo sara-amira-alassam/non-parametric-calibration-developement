@@ -13,6 +13,8 @@ source("WalkerMasterFunctionFinal.R")
 source("SimStudyFuncsFinal.R")
 source("PostProcessing.R")
 
+library(carbondate)
+
 # Read in data
 # x - c14ages
 # xsig - corresponding 1 sigma
