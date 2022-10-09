@@ -77,7 +77,11 @@ NealTemp <- BivarGibbsDirichletwithSlice(
   calcurve = calcurve, nclusinit = 10
 )
 
-SPD <- find_spd_estimate(yrange=floor(range(NealTemp$theta)), x, xsig, calcurve)
+SPD <- carbondate::FindSPD(
+  calendar_age_range=floor(range(NealTemp$theta)),
+  c14_determinations=x,
+  c14_uncertainties=xsig,
+  calibration_data=carbondate::intcal20)
 
 post_process_and_plot(NULL, NealTemp, SPD, NULL, npostsum, calcurve, lambda, nu1, nu2, x, xsig)
 

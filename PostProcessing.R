@@ -1,24 +1,3 @@
-
-find_spd_estimate <- function(yrange, x, xsig, calcurve) {
-  yfromto <- seq(max(0, yrange[1] - 400), min(50000, yrange[2] + 400), by = 1)
-
-  # Find the calibration curve mean and sd over the yrange
-  CurveR <- carbondate::InterpolateCalibrationCurve(yfromto, carbondate::intcal20)
-
-  # Now we want to apply to each radiocarbon determination
-  # Matrix where each column represents the posterior probability of each theta in yfromto
-  indprobs <- mapply(carbondate::CalibrateSingleDetermination, x, xsig, MoreArgs = list(calibration_data = CurveR))
-
-  # Find the SPD estimate (save as dataframe)
-  SPD <- data.frame(
-    calage = yfromto,
-    prob = apply(indprobs, 1, sum) / dim(indprobs)[2]
-  )
-
-  return(SPD)
-}
-
-
 post_process_and_plot <- function(
     WalkerTemp, NealTemp, SPD, true_density, npostsum, calcurve, lambda, nu1, nu2, x, xsig,
     xlimscal = 1, ylimscal=1, denscale=3) {
@@ -142,12 +121,12 @@ plot_calibration_curve_and_data <- function(xlim, ylim, calcurve, x, calibration
 
 plot_SPD_estimate_on_current_plot <- function(SPD, SPD_colour, denscale, xlim) {
   par(new = TRUE)
-  plot(SPD$calage, SPD$prob,
+  plot(SPD$calendar_age, SPD$probability,
        lty = 1, col = SPD_colour, type = "n",
        ylim = c(0, denscale * max(SPD$prob)), xlim = xlim,
        axes = FALSE, xlab = NA, ylab = NA
   )
-  polygon(c(SPD$calage, rev(SPD$calage)), c(SPD$prob, rep(0, length(SPD$prob))),
+  polygon(c(SPD$calendar_age, rev(SPD$calendar_age)), c(SPD$probability, rep(0, length(SPD$probability))),
           border = NA, col = SPD_colour
   )
 }
