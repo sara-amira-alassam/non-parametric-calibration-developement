@@ -1,0 +1,65 @@
+digraph xyz {
+rankdir=TB;
+as_row[shape=ellipse]
+BivarGibbsDirichletwithSlice[shape=ellipse]
+BivarUpdatec[shape=ellipse]
+BivarUpdatephitau[shape=ellipse]
+calibind[shape=ellipse]
+DPWalkerUpdate[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+FindCal[shape=ellipse]
+FindInterval[shape=ellipse]
+LogLikalpha[shape=ellipse]
+Logmargnormgamma[shape=ellipse]
+NealFindpred[shape=ellipse]
+SamplefromInt[shape=ellipse]
+sampnewphi[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+SliceSample[shape=ellipse]
+thetaloglikfast[shape=ellipse]
+Updatealphagammapr[shape=ellipse]
+Updatealphalognormpr[shape=ellipse]
+Updatemuphi[shape=ellipse]
+WalkerBivarDirichlet[shape=ellipse]
+WalkerLogLikc[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+WalkerUpdatec[shape=ellipse, fillcolor="#CCFFFF", style=filled]
+
+
+NealFindpred -> as_row
+BivarUpdatec -> as_row
+LogLikalpha -> as_row
+
+BivarGibbsDirichletwithSlice -> BivarUpdatec
+
+BivarGibbsDirichletwithSlice -> BivarUpdatephitau
+DPWalkerUpdate -> BivarUpdatephitau
+
+BivarGibbsDirichletwithSlice -> calibind
+
+WalkerBivarDirichlet -> DPWalkerUpdate
+
+BivarGibbsDirichletwithSlice -> FindCal
+
+SliceSample -> FindInterval
+
+Updatealphalognormpr -> LogLikalpha
+
+BivarUpdatec -> Logmargnormgamma
+
+SliceSample -> SamplefromInt
+
+DPWalkerUpdate -> sampnewphi
+
+BivarGibbsDirichletwithSlice -> SliceSample
+WalkerBivarDirichlet -> SliceSample
+
+BivarGibbsDirichletwithSlice -> thetaloglikfast
+WalkerBivarDirichlet -> thetaloglikfast
+
+BivarGibbsDirichletwithSlice -> Updatealphagammapr
+
+BivarGibbsDirichletwithSlice -> Updatealphalognormpr
+
+BivarGibbsDirichletwithSlice -> Updatemuphi
+WalkerBivarDirichlet -> Updatemuphi
+
+WalkerBivarDirichlet -> WalkerUpdatec -> WalkerLogLikc
+}

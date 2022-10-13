@@ -1,5 +1,5 @@
 post_process_and_plot <- function(
-    WalkerTemp, NealTemp, SPD, true_density, npostsum, calcurve, lambda, nu1, nu2, x, xsig,
+    WalkerTemp, NealTemp, SPD, true_density, npostsum, calibration_curve, lambda, nu1, nu2, x, xsig,
     xlimscal = 1, ylimscal=1, denscale=3) {
   SPD_colour <- grey(0.1, alpha = 0.5)
   calibration_curve_colour <- "blue"
@@ -13,7 +13,7 @@ post_process_and_plot <- function(
   ylim <- scale_limit(range(x) + c(-2, 2) * quantile(xsig, 0.9), ylimscal)
 
   create_plot_layout(WalkerTemp, NealTemp)
-  plot_calibration_curve_and_data(xlim, ylim, calcurve, x, calibration_curve_colour)
+  plot_calibration_curve_and_data(xlim, ylim, calibration_curve, x, calibration_curve_colour)
 
   # Plot the SPD and DPMM density along the bottom
   plot_SPD_estimate_on_current_plot(SPD, SPD_colour, denscale, xlim)
@@ -49,8 +49,8 @@ create_range_to_plot_density <- function(WalkerTemp, NealTemp) {
   # We should have sum(postdenCI) * gridgap = 1 (where gridgap is the spacing in tempx)
   if (!is.null(WalkerTemp)) {
     tempx <- seq(
-      floor(min(WalkerTemp$theta, na.rm = TRUE)),
-      ceiling(max(WalkerTemp$theta, na.rm = TRUE)),
+      floor(min(WalkerTemp$calendar_ages, na.rm = TRUE)),
+      ceiling(max(WalkerTemp$calendar_ages, na.rm = TRUE)),
       by = 1,
     )
   } else {
@@ -92,11 +92,11 @@ create_plot_layout <- function(WalkerTemp, NealTemp) {
 }
 
 
-plot_calibration_curve_and_data <- function(xlim, ylim, calcurve, x, calibration_curve_colour) {
+plot_calibration_curve_and_data <- function(xlim, ylim, calibration_curve, x, calibration_curve_colour) {
   par(mar = c(5, 4.5, 4, 2) + 0.1, las = 1)
   plot(
-    calcurve$calage,
-    calcurve$c14age,
+    calibration_curve$calendar_age,
+    calibration_curve$c14_age,
     col = calibration_curve_colour,
     ylim = ylim,
     xlim = xlim,
@@ -105,13 +105,13 @@ plot_calibration_curve_and_data <- function(xlim, ylim, calcurve, x, calibration
     type = "l",
     main = expression(paste(""^14, "C Calibration")),
   )
-  calcurve$ub <- calcurve$c14age + 1.96 * calcurve$c14sig
-  calcurve$lb <- calcurve$c14age - 1.96 * calcurve$c14sig
-  lines(calcurve$calage, calcurve$ub, lty = 2, col = calibration_curve_colour)
-  lines(calcurve$calage, calcurve$lb, lty = 2, col = calibration_curve_colour)
+  calibration_curve$ub <- calibration_curve$c14_age + 1.96 * calibration_curve$c14_sig
+  calibration_curve$lb <- calibration_curve$c14_age - 1.96 * calibration_curve$c14_sig
+  lines(calibration_curve$calendar_age, calibration_curve$ub, lty = 2, col = calibration_curve_colour)
+  lines(calibration_curve$calendar_age, calibration_curve$lb, lty = 2, col = calibration_curve_colour)
   polygon(
-    c(rev(calcurve$calage), calcurve$calage),
-    c(rev(calcurve$lb), calcurve$ub),
+    c(rev(calibration_curve$calendar_age), calibration_curve$calendar_age),
+    c(rev(calibration_curve$lb), calibration_curve$ub),
     col = rgb(0, 0, 1, .3),
     border = NA,
   )
@@ -157,8 +157,8 @@ find_density_per_sample_id_walker <- function(WalkerTemp, tempx, npostsum, lambd
     2,
     function(i, out, x, lambda, nu1, nu2) {
       WalkerFindpred(x,
-                     w = out$w[[i]], phi = out$phi[[i]], tau = out$tau[[i]],
-                     muphi = out$muphi[i], lambda = lambda, nu1 = nu1, nu2 = nu2
+                     w = out$weight[[i]], phi = out$phi[[i]], tau = out$tau[[i]],
+                     muphi = out$mu_phi[i], lambda = lambda, nu1 = nu1, nu2 = nu2
       )
     },
     out = WalkerTemp, x = tempx, lambda = lambda, nu1 = nu1, nu2 = nu2
@@ -240,8 +240,7 @@ plot_number_of_walker_clusters <- function(WalkerTemp) {
   npost <- dim(WalkerTemp$delta)[1]
   nburn <- floor(npost / 2)
 
-  WalkerNClust <- apply(WalkerTemp$delta, 1, function(x) length(unique(x)))
-  WalkerNClust <- WalkerNClust[nburn:npost]
+  WalkerNClust <- WalkerTemp$n_clust[nburn:npost]
   hist(WalkerNClust,
        xlab = "Number of Clusters", main = "Walker - Slice Sample DP",
        probability = TRUE, breaks = seq(0.5, max(WalkerNClust) + 1, by = 1)

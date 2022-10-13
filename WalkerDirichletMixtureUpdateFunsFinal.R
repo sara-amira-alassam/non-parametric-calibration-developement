@@ -428,13 +428,13 @@ sampnewphi <- function(mu, sigma, range = c(0, 50000)) {
 # MCMCoutput - the Walker/Neal output
 # ident - the determination you want to show the individual posrterior cal age for
 # y, er - vector of c14ages and c14sigs for all observations
-# calcurve - the calibraiton curve you are using
+# calibration_curve - the calibraiton curve you are using
 # nburn and nbreaks - choices of the burn in length and number of breaks in the histogram
 # Output:
 # A plot of the histogram of the posterior calendar age
-plotindpost <- function(MCMCoutput, ident, y, er, calcurve, nburn = NA, nbreaks = NA) {
+plotindpost <- function(MCMCoutput, ident, y, er, calibration_curve, nburn = NA, nbreaks = NA) {
   par(mfrow = c(1, 1))
-  theta <- MCMCoutput$theta[, ident]
+  theta <- MCMCoutput$calendar_ages[, ident]
   c14age <- y[ident]
   c14sig <- er[ident]
 
@@ -453,13 +453,13 @@ plotindpost <- function(MCMCoutput, ident, y, er, calcurve, nburn = NA, nbreaks 
 
   # Find the calendar age range to plot
   xrange <- range(theta)
-  temp <- c(which.min(abs(calcurve$calage - xrange[1])), which.min(abs(calcurve$calage - xrange[2])))
+  temp <- c(which.min(abs(calibration_curve$calendar_age - xrange[1])), which.min(abs(calibration_curve$calendar_age - xrange[2])))
   idrange <- temp[1]:temp[2]
-  calcurve$ub <- calcurve$c14age + 1.96 * calcurve$c14sig
-  calcurve$lb <- calcurve$c14age - 1.96 * calcurve$c14sig
-  yrange <- range(calcurve$ub[idrange], calcurve$lb[idrange])
+  calibration_curve$ub <- calibration_curve$c14_age + 1.96 * calibration_curve$c14_sig
+  calibration_curve$lb <- calibration_curve$c14_age - 1.96 * calibration_curve$c14_sig
+  yrange <- range(calibration_curve$ub[idrange], calibration_curve$lb[idrange])
 
-  plot(calcurve$calage, calcurve$c14age,
+  plot(calibration_curve$calendar_age, calibration_curve$c14_age,
     col = "blue",
     ylim = yrange, xlim = rev(xrange),
     xlab = "Calendar Age (cal yr BP)", ylab = expression(paste(""^14, "C", " age (", ""^14, "C yr BP)")),
@@ -469,8 +469,8 @@ plotindpost <- function(MCMCoutput, ident, y, er, calcurve, nburn = NA, nbreaks 
     ),
     xaxs = "i", yaxs = "i"
   )
-  lines(calcurve$calage, calcurve$ub, lty = 2, col = "blue")
-  lines(calcurve$calage, calcurve$lb, lty = 2, col = "blue")
+  lines(calibration_curve$calendar_age, calibration_curve$ub, lty = 2, col = "blue")
+  lines(calibration_curve$calendar_age, calibration_curve$lb, lty = 2, col = "blue")
 
   # Plot the 14C determination on the y-axis
   yfromto <- seq(c14age - 3 * c14sig, c14age + 3 * c14sig, by = 1)
