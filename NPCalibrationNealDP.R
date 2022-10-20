@@ -5,48 +5,24 @@
 # This version uses the Polya Urn method of sampling form the DP
 # It is slower so I suggest using the Walker version
 
-set.seed(14)
-
-# Read in IntCal20 curve
-calcurve <- read.table("Curves/intcal20.14c", sep = ",", header = FALSE, skip = 11)
-names(calcurve) <- c("calage", "c14age", "c14sig", "Delta14C", "DeltaSigma")
+set.seed(8)
 
 library(carbondate)
 
-# Read in the necessary functions
-source("WalkerDirichletMixtureUpdateFunsFinal.R") # This also reads in the slice sampling SliceUpdateFuns.R
-source("NealDirichletMixtureMasterFunctionsFinal.R")
-source("WalkerMasterFunctionFinal.R")
-source("SimStudyFuncsFinal.R")
-source("PostProcessing.R")
-
 # Read in data
-# x - c14ages
-# xsig - corresponding 1 sigma
 Kerr <- read.csv("RealDatasets/kerr2014sss_sup.csv", header = FALSE, sep = ",")
-x <- Kerr[, 3]
-xsig <- Kerr[, 4]
-
-#############################################################################
-# Now choose hyperparameters
-############################################################
-# Prior on the concentration parameter
-# Place  a gamma prior on alpha
-# alpha ~ Gamma(alphaprshape, alphaprrate)
-# A small alpha means more concentrated (i.e. few clusters)
-# Large alpha not concentrated (many clusters)
-cprshape <- alphaprshape <- 1
-cprrate <- alphaprrate <- 1
+c14_ages <- Kerr[, 3]
+c14_sig <- Kerr[, 4] # corresponding 1 sigma
 
 #### Updated adaptive version
 # Prior on mu theta for DP - very uninformative based on observed data
-# initprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = calcurve$c14age, calsig = calcurve$c14sig))
-calibration_data = data.frame(c14_age = calcurve$c14age, c14_sig = calcurve$c14sig)
-initprobs <- mapply(carbondate::CalibrateSingleDetermination, x, xsig, MoreArgs = list(calibration_data = calibration_data))
-inittheta <- calcurve$calage[apply(initprobs, 2, which.max)]
-# Choose A and B from range of theta
-A <- median(inittheta)
-B <- 1 / (max(inittheta) - min(inittheta))^2
+initprobs <- mapply(
+  carbondate::CalibrateSingleDetermination,
+  c14_ages,
+  c14_sig,
+  MoreArgs = list(calibration_curve = intcal20))
+inittheta <- intcal20$calendar_age[apply(initprobs, 2, which.max)]
+
 maxrange <- max(inittheta) - min(inittheta)
 
 # Parameters for sigma2 (sigma^2 ~ InvGamma(nu1, nu2))
@@ -56,35 +32,38 @@ tempspread <- 0.1 * mad(inittheta)
 tempprec <- 1 / (tempspread)^2
 nu1 <- 0.25
 nu2 <- nu1 / tempprec
-
-# Setup the NP method
 lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
 
+neal_temp <- carbondate::BivarGibbsDirichletwithSlice(
+  c14_determinations = c14_ages,
+  c14_uncertainties = c14_sig,
+  calibration_curve = intcal20,
+  lambda = lambda,
+  nu1 = nu1,
+  nu2 = nu2,
+  alpha_shape = 1,
+  alpha_rate = 1,
+  n_iter = 1000,
+  n_thin = 5,
+  slice_width = max(1000, diff(range(c14_ages)) / 2),
+  slice_multiplier = 10,
+  n_clust = 10)
 
-# Choose number of iterations for sampler
-niter <- 1000
-nthin <- 5 # Don't choose too high, after burn-in we have (niter/nthin)/2 samples from posterior to potentially use
-npostsum <- 5000 # Current number of samples it will draw from this posterior to estimate fhat (possibly repeats)
+carbondate::PlotCalendarAgeDensity(
+  c14_determinations = c14_ages,
+  c14_uncertainties = c14_sig,
+  calibration_curve = intcal20,
+  output_data = neal_temp,
+  n_posterior_samples = 5000,
+  lambda = lambda,
+  nu1 = nu1,
+  nu2 = nu2)
 
-NealTemp <- BivarGibbsDirichletwithSlice(
-  x = x, xsig = xsig,
-  lambda = lambda, nu1 = nu1, nu2 = nu2,
-  A = A, B = B,
-  mualpha = NA, sigalpha = NA,
-  alphaprshape = alphaprshape, alphaprrate = alphaprrate,
-  niter = niter, nthin = nthin, theta = inittheta,
-  w = max(1000, diff(range(x)) / 2), m = 10,
-  calcurve = calcurve, nclusinit = 10
-)
+carbondate::PlotNumberOfClusters(output_data = neal_temp)
 
-SPD <- carbondate::FindSPD(
-  calendar_age_range=floor(range(NealTemp$theta)),
-  c14_determinations=x,
-  c14_uncertainties=xsig,
-  calibration_data=carbondate::intcal20)
-
-post_process_and_plot(NULL, NealTemp, SPD, NULL, npostsum, calcurve, lambda, nu1, nu2, x, xsig)
-
-# If we want to plot e.g. the posterior calendar age density against the curve then we can run the below
-# ident is the determination you want to calibrate
-plotindpost(NealTemp, ident = 15, y = x, er = xsig, calcurve = calcurve)
+carbondate::PlotIndividualCalendarAgeDensity(
+  ident=15,
+  c14_determinations = c14_ages,
+  c14_uncertainties = c14_sig,
+  calibration_curve = intcal20,
+  output_data = neal_temp)
