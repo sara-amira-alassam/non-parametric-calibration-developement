@@ -3,118 +3,114 @@
 # Study to see how well the densities are reconstructed
 set.seed(14)
 
+library(carbondate)
 
-# Read in the necessary functions
-source("WalkerDirichletMixtureUpdateFunsFinal.R") # This also reads in the slice sampling SliceUpdateFuns.R
-source("NealDirichletMixtureMasterFunctionsFinal.R")
-source("WalkerMasterFunctionFinal.R")
-source("SimStudyFuncsFinal.R")
-source("PostProcessing.R")
-
-# Read in IntCal20 curve
-calcurve <- read.table("Curves/intcal20.14c", sep = ",", header = FALSE, skip = 11)
-names(calcurve) <- c("calage", "c14age", "c14sig", "Delta14C", "DeltaSigma")
-
-# Number of observations and xsig
-nobs <- 100
-xsig <- rep(25, nobs)
-
-# Choose base f(theta)
-wtrue <- c(0.1, 0.4, 0.5)
-wtrue <- wtrue / sum(wtrue)
-phitrue <- c(3500, 4200, 5000)
-tautrue <- 1 / c(200, 100, 300)^2
-nclus <- length(wtrue)
-
-
+###############################################################################
 # Create some observed data from the clusters according to probabilities
-ctrue <- sample(1:nclus, nobs, replace = TRUE, prob = wtrue)
-thetatrue <- rnorm(nobs, mean = phitrue[ctrue], sd = 1 / sqrt(tautrue[ctrue]))
-hist(thetatrue, breaks = 20)
 
-#### Now create some radiocarbon determinations x
+num_observations <- 100
+c14_sig <- rep(25, num_observations)
 
-# Interpolate calobration curve mean and sd at theta values
-calinterp <- FindCal(thetatrue, calmu = calcurve$c14age, caltheta = calcurve$calage, calsig = calcurve$c14sig)
+# Choose base function of calendar age
+weights_true <- c(0.1, 0.4, 0.5)
+weights_true <- weights_true / sum(weights_true)
+phi_true <- c(3500, 4200, 5000)
+tau_true <- 1 / c(200, 100, 300)^2
+n_clust_true <- length(weights_true)
+
+cluster_identifiers_true <- sample(
+  1:n_clust_true, num_observations, replace = TRUE, prob = weights_true)
+calendar_ages_true <- rnorm(
+  num_observations,
+  mean = phi_true[cluster_identifiers_true],
+  sd = 1 / sqrt(tau_true[cluster_identifiers_true]))
+hist(calendar_ages_true, breaks = 20)
+
+# Create some radiocarbon determinations
+interpolated_calibration_curve = carbondate::InterpolateCalibrationCurve(
+  new_calendar_ages = calendar_ages_true, calibration_curve = intcal20)
+interpolated_c14_age <- interpolated_calibration_curve$c14_age
+interpolated_c14_sig <- interpolated_calibration_curve$c14_sig
 
 # Sample some calibration curve values
-xcalcurve <- rnorm(nobs, calinterp$mu, calinterp$sigma)
+xcalcurve <- rnorm(num_observations, interpolated_c14_age, interpolated_c14_sig)
+c14_ages <- rnorm(num_observations, mean = xcalcurve, sd = c14_sig)
 
-x <- rnorm(nobs, mean = xcalcurve, sd = xsig)
 
-###############################################
-# Now run the Walker Sampler
-###############################################
-# Choose number of iterations for sampler
-niter <- 1000 # 10000 # 10000
-nthin <- 5
-npostsum <- 5000
-
-############################################################################
-# Now choose fixed DP hyperparameters
-############################################################
-# Prior on the concentration parameter
-# Place  a gamma prior on alpha
-# alpha ~ Gamma(alphaprshape, alphaprrate)
-# A small alpha means more concentrated (i.e. few clusters)
-# Large alpha not concentrated (many clusters)
-cprshape <- alphaprshape <- 1
-cprrate <- alphaprrate <- 1
-
-#### Updated adaptive version
+###############################################################################
+# Set parameters - Updated adaptive version
 # Prior on mu theta for DP - very uninformative based on observed data
-initprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = calcurve$c14age, calsig = calcurve$c14sig))
-inittheta <- calcurve$calage[apply(initprobs, 2, which.max)]
-# Choose A and B from range of theta
-A <- median(inittheta)
-B <- 1 / (max(inittheta) - min(inittheta))^2
+initprobs <- mapply(
+  carbondate::CalibrateSingleDetermination,
+  c14_ages,
+  c14_sig,
+  MoreArgs = list(calibration_curve = intcal20))
+inittheta <- intcal20$calendar_age[apply(initprobs, 2, which.max)]
+
 maxrange <- max(inittheta) - min(inittheta)
 
 # Parameters for sigma2 (sigma^2 ~ InvGamma(nu1, nu2))
 # E[tau] = (1/100)^2 Var[tau] = (1/100)^4
-# Interval for sigma2 is approx 1/ c(nu2/nu1 - 2*nu2^2/nu1, nu2/nu1 + 2*nu2^2/nu1)
+# Interval for sigma2 is approx 1/c(nu2/nu1 - 2*nu2^2/nu1, nu2/nu1 +2*nu2^2/nu1)
 tempspread <- 0.1 * mad(inittheta)
 tempprec <- 1 / (tempspread)^2
 nu1 <- 0.25
 nu2 <- nu1 / tempprec
-
-# Setup the NP method
 lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
 
-#####################################################################
+
+###############################################################################
 # Implement the Neal version of the DPMM
-NealTemp <- BivarGibbsDirichletwithSlice(
-  x = x, xsig = xsig,
-  lambda = lambda, nu1 = nu1, nu2 = nu2,
-  A = A, B = B,
-  mualpha = NA, sigalpha = NA,
-  alphaprshape = alphaprshape, alphaprrate = alphaprrate,
-  niter = niter, nthin = nthin, theta = inittheta,
-  w = max(1000, diff(range(x)) / 2), m = 10,
-  calcurve = calcurve, nclusinit = 10
-)
+neal_temp <- carbondate::BivarGibbsDirichletwithSlice(
+  c14_determinations = c14_ages,
+  c14_uncertainties = c14_sig,
+  calibration_curve = intcal20,
+  lambda = lambda,
+  nu1 = nu1,
+  nu2 = nu2,
+  alpha_shape = 1,
+  alpha_rate = 1,
+  n_iter = 1000,
+  n_thin = 5,
+  slice_width = max(1000, diff(range(c14_ages)) / 2),
+  slice_multiplier = 10,
+  n_clust = 10)
 
-#####################################################################
+###############################################################################
 # Implement the Walker version of the DPMM
-WalkerTemp <- WalkerBivarDirichlet(
-  x = x, xsig = xsig,
-  lambda = lambda, nu1 = nu1, nu2 = nu2,
-  A = A, B = B,
-  cprshape = cprshape, cprrate = cprrate,
-  niter = niter, nthin = nthin, theta = inittheta,
-  slicew = max(1000, diff(range(x)) / 2), m = 10,
-  calcurve = calcurve, kstar = 10
-)
-Temp <- WalkerTemp
+walker_temp <- carbondate::WalkerBivarDirichlet(
+  c14_determinations = c14_ages,
+  c14_uncertainties = c14_sig,
+  calibration_curve=intcal20,
+  lambda = lambda,
+  nu1 = nu1,
+  nu2 = nu2,
+  alpha_shape = 1,
+  alpha_rate = 1,
+  n_iter = 1000,
+  n_thin = 5,
+  slice_width = max(1000, diff(range(c14_ages)) / 2),
+  slice_multiplier = 10,
+  n_clust = 10)
 
-SPD <- find_spd_estimate(yrange=floor(range(WalkerTemp$theta)), x, xsig, calcurve)
 
-xvals = seq(min(thetatrue) - 200, max(thetatrue) + 200, by=1)
-true_density = data.frame(x=xvals, y=0)
-for (i in 1:length(wtrue)) {
-  true_density$y <- true_density$y + wtrue[i] * dnorm(xvals, mean = phitrue[i], sd = 1 / sqrt(tautrue[i]))
-}
+###############################################################################
+# Plot results
+# Create a layout with 2/3 showing the predictive density 1/3*1/2 showing the
+# number of clusters for each method
+layout.matrix <- matrix(c(1, 1, 2, 3), nrow = 2, ncol = 2)
+layout(mat = layout.matrix, heights = c(3, 3), widths = c(10, 4.5))
 
-post_process_and_plot(
-  WalkerTemp, NealTemp, SPD, true_density, npostsum, calcurve, lambda, nu1, nu2, x, xsig,
-  xlimscal=1.1, ylimscal=1.25, denscale=5)
+carbondate::PlotCalendarAgeDensity(
+  c14_determinations = c14_ages,
+  c14_uncertainties = c14_sig,
+  calibration_curve = intcal20,
+  output_data = walker_temp,
+  n_posterior_samples = 5000,
+  lambda = lambda,
+  nu1 = nu1,
+  nu2 = nu2)
+
+carbondate::PlotNumberOfClusters(output_data = neal_temp)
+
+carbondate::PlotNumberOfClusters(output_data = walker_temp)

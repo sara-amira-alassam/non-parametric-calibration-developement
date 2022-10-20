@@ -30,7 +30,7 @@ maxrange <- max(inittheta) - min(inittheta)
 
 # Parameters for sigma2 (sigma^2 ~ InvGamma(nu1, nu2))
 # E[tau] = (1/100)^2 Var[tau] = (1/100)^4
-# Interval for sigma2 is approx 1/ c(nu2/nu1 - 2*nu2^2/nu1, nu2/nu1 + 2*nu2^2/nu1)
+# Interval for sigma2 is approx 1/c(nu2/nu1 - 2*nu2^2/nu1, nu2/nu1 +2*nu2^2/nu1)
 tempspread <- 0.1 * mad(inittheta)
 tempprec <- 1 / (tempspread)^2
 nu1 <- 0.25
