@@ -3,6 +3,7 @@
 # Study to see how well the densities are reconstructed
 set.seed(83)
 
+library(carbondate)
 ###############################################################################
 # Create some observed data from a uniform distribution
 
@@ -10,8 +11,13 @@ num_observations <- 100
 c14_sig <- rep(25, num_observations)
 
 # Create uniform distribution
-calendar_ages_true <- runif(num_observations, min = 6000, max = 6500)
-hist(calendar_ages_true)
+begin = 6000
+end = 6500
+true_density = data.frame(
+  x = intcal20$calendar_age,
+  y = dunif(x = intcal20$calendar_age, min = begin, max = end))
+calendar_ages_true <- runif(num_observations, min = begin, max = end)
+hist(calendar_ages_true, breaks = 20)
 
 # Create some radiocarbon determinations
 interpolated_calibration_curve = carbondate::InterpolateCalibrationCurve(
@@ -91,12 +97,13 @@ carbondate::PlotCalendarAgeDensity(
   c14_determinations = c14_ages,
   c14_uncertainties = c14_sig,
   calibration_curve = intcal20,
-  output_data = walker_temp,
-  n_posterior_samples = 5000,
-  lambda = lambda,
-  nu1 = nu1,
-  nu2 = nu2)
+  output_data = list(walker_temp, neal_temp),
+  n_posterior_samples = 500,
+  show_confidence_intervals = FALSE,
+  true_density=true_density)
 
 carbondate::PlotNumberOfClusters(output_data = neal_temp)
 
 carbondate::PlotNumberOfClusters(output_data = walker_temp)
+
+par(mfrow = c(1,1))

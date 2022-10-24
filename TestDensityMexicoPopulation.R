@@ -14,7 +14,8 @@ plot(Mexico$calBP, Mexico$Pop, type = "l")
 mintheta <- ceiling(min(Mexico$calBP))
 maxtheta <- floor(max(Mexico$calBP))
 popinterp <- approx(x = Mexico$calBP, y = Mexico$Pop, xout = mintheta:maxtheta)
-popinterp$y <- popinterp$y / sum(popinterp$y) # Re-scale for density
+# Re-scale for density and convert to data frame for later plotting
+popinterp <- data.frame(x = popinterp$x, y = popinterp$y / sum(popinterp$y))
 
 # Create simulated calendar ages
 num_observations <- 500
@@ -102,13 +103,12 @@ carbondate::PlotCalendarAgeDensity(
   c14_determinations = c14_ages,
   c14_uncertainties = c14_sig,
   calibration_curve = intcal20,
-  output_data = walker_temp,
-  n_posterior_samples = 5000,
-  lambda = lambda,
-  nu1 = nu1,
-  nu2 = nu2)
+  output_data = list(walker_temp, neal_temp),
+  n_posterior_samples = 500,
+  true_density = popinterp)
 
 carbondate::PlotNumberOfClusters(output_data = neal_temp)
 
 carbondate::PlotNumberOfClusters(output_data = walker_temp)
 
+par(mfrow = c(1,1))

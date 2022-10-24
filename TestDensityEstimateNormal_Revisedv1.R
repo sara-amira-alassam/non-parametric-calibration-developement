@@ -18,6 +18,14 @@ phi_true <- c(3500, 4200, 5000)
 tau_true <- 1 / c(200, 100, 300)^2
 n_clust_true <- length(weights_true)
 
+true_density = data.frame(x = intcal20$calendar_age, y = 0)
+true_density$y <- 0
+for(i in 1:length(weights_true)) {
+  true_density$y <- true_density$y +
+    weights_true[i] * dnorm(
+      true_density$x, mean = phi_true[i], sd = 1/sqrt(tau_true[i]))
+}
+
 cluster_identifiers_true <- sample(
   1:n_clust_true, num_observations, replace = TRUE, prob = weights_true)
 calendar_ages_true <- rnorm(
@@ -105,12 +113,13 @@ carbondate::PlotCalendarAgeDensity(
   c14_determinations = c14_ages,
   c14_uncertainties = c14_sig,
   calibration_curve = intcal20,
-  output_data = walker_temp,
-  n_posterior_samples = 5000,
-  lambda = lambda,
-  nu1 = nu1,
-  nu2 = nu2)
+  output_data = list(walker_temp, neal_temp),
+  true_density = true_density,
+  n_posterior_samples = 500,
+  show_confidence_intervals = FALSE)
 
 carbondate::PlotNumberOfClusters(output_data = neal_temp)
 
 carbondate::PlotNumberOfClusters(output_data = walker_temp)
+
+par(mfrow = c(1,1))

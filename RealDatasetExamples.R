@@ -5,85 +5,87 @@
 # Armit - Population Decline in Iron Age n=2021 obs
 # using the new IntCal20 curve
 
-# Read in IntCal20 curve
-calcurve <- read.table("Curves/intcal20.14c", sep = ",", header = FALSE, skip = 11)
-names(calcurve) <- c("calage", "c14age", "c14sig", "Delta14C", "DeltaSigma")
+library("carbondate")
 
-# Read in the necessary functions
-source("WalkerDirichletMixtureUpdateFunsFinal.R") # This also reads in the slice sampling SliceUpdateFuns.R
-source("NealDirichletMixtureMasterFunctionsFinal.R")
-source("WalkerMasterFunctionFinal.R")
-source("SimStudyFuncsFinal.R")
-source("PostProcessing.R")
-
-##### Read in the data
-ExampleSet <- "Buchanan"
+################################################################################
+# Read in the data
+ExampleSet <- "Armit"
 
 if (ExampleSet == "Kerr") {
   Kerr <- read.csv("RealDatasets/kerr2014sss_sup.csv", header = FALSE, sep = ",")
-  x <- Kerr[, 3]
-  xsig <- Kerr[, 4]
+  c14_ages <- Kerr[, 3]
+  c14_sig <- Kerr[, 4] # corresponding 1 sigma
 } else if (ExampleSet == "Buchanan") {
   Data <- read.csv("RealDatasets/buchanan2008pde.csv", header = FALSE, sep = ",")
-  x <- Data[, 3]
-  xsig <- Data[, 4]
+  c14_ages <- Data[, 3]
+  c14_sig <- Data[, 4]
 } else if (ExampleSet == "Armit") {
   Armit <- read.csv("RealDatasets/armit2014rcc_sd01.csv", header = TRUE, sep = ",")
   # Remove the two observations with missing xsig values
   remove <- which(is.na(Armit$error))
   Armit <- Armit[-remove, ]
-  x <- Armit$X14C.age
-  xsig <- Armit$error
+  c14_ages <- Armit$X14C.age
+  c14_sig <- Armit$error
 } else {
   stop("Unknown Example")
 }
 
-############################################################################
-# Now choose hyperparameters
-############################################################
-# Prior on the concentration parameter
-# Place  a gamma prior on alpha
-# alpha ~ Gamma(alphaprshape, alphaprrate)
-# A small alpha means more concentrated (i.e. few clusters)
-# Large alpha not concentrated (many clusters)
-cprshape <- alphaprshape <- 1
-cprrate <- alphaprrate <- 1
-
-#### Updated adaptive version
+###############################################################################
+# Set parameters - Updated adaptive version
 # Prior on mu theta for DP - very uninformative based on observed data
-initprobs <- mapply(calibind, x, xsig, MoreArgs = list(calmu = calcurve$c14age, calsig = calcurve$c14sig))
-inittheta <- calcurve$calage[apply(initprobs, 2, which.max)]
-# Choose A and B from range of theta
-A <- median(inittheta)
-B <- 1 / (max(inittheta) - min(inittheta))^2
+initprobs <- mapply(
+  carbondate::CalibrateSingleDetermination,
+  c14_ages,
+  c14_sig,
+  MoreArgs = list(calibration_curve=carbondate::intcal20))
+inittheta <- intcal20$calendar_age[apply(initprobs, 2, which.max)]
+
 maxrange <- max(inittheta) - min(inittheta)
 
 # Parameters for sigma2 (sigma^2 ~ InvGamma(nu1, nu2))
 # E[tau] = (1/100)^2 Var[tau] = (1/100)^4
-# Interval for sigma2 is approx 1/ c(nu2/nu1 - 2*nu2^2/nu1, nu2/nu1 + 2*nu2^2/nu1)
+# Interval for sigma2 is approx 1/c(nu2/nu1-2*nu2^2/nu1, nu2/nu1+2*nu2^2/nu1)
 tempspread <- 0.1 * mad(inittheta)
 tempprec <- 1 / (tempspread)^2
 nu1 <- 0.25
 nu2 <- nu1 / tempprec
 
-# Setup the NP method
 lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
 
-# Choose number of iterations for sampler
-niter <- 1000
-nthin <- 5 # Ensure that (niter/nthin)/2 is not too small (this is max posterior sample)
-npostsum <- 1000 # Current number of samples it will draw from this posterior to estimate fhat (possibly repeats)
+###############################################################################
+# Perform the MCMC update
 
-# Run the Walekr slice sampler
-WalkerTemp <- WalkerBivarDirichlet(
-  x = x, xsig = xsig,
-  lambda = lambda, nu1 = nu1, nu2 = nu2,
-  A = A, B = B,
-  cprshape = cprshape, cprrate = cprrate,
-  niter = niter, nthin = nthin, theta = inittheta,
-  slicew = max(1000, diff(range(x)) / 2), m = 10, calcurve = calcurve, kstar = 10
-)
+walker_temp <- carbondate::WalkerBivarDirichlet(
+  c14_determinations = c14_ages,
+  c14_uncertainties = c14_sig,
+  calibration_curve=intcal20,
+  lambda = lambda,
+  nu1 = nu1,
+  nu2 = nu2,
+  alpha_shape = 1,
+  alpha_rate = 1,
+  n_iter = 1000,
+  n_thin = 5,
+  slice_width = max(1000, diff(range(c14_ages)) / 2),
+  slice_multiplier = 10,
+  n_clust = 10)
 
-SPD <- find_spd_estimate(yrange=floor(range(WalkerTemp$theta)), x, xsig, calcurve)
+###############################################################################
+# Plot results
 
-post_process_and_plot(WalkerTemp, NULL, SPD, NULL, npostsum, calcurve, lambda, nu1, nu2, x, xsig)
+# Create a layout with 2/3 showing the predictive density 1/3 showing the number
+# of clusters
+layout.matrix <- matrix(c(1, 2), nrow = 1, ncol = 2)
+layout(mat = layout.matrix, heights = c(1), widths = c(10, 4.5))
+
+carbondate::PlotCalendarAgeDensity(
+  c14_determinations = c14_ages,
+  c14_uncertainties = c14_sig,
+  calibration_curve = intcal20,
+  output_data = walker_temp,
+  n_posterior_samples = 5000,
+  lambda = lambda,
+  nu1 = nu1,
+  nu2 = nu2)
+
+carbondate::PlotNumberOfClusters(output_data = walker_temp)
