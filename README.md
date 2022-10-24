@@ -1,4 +1,4 @@
-# non-parametric-calibration-developement
+# non-parametric-calibration-development
 Taking TJHeaton's code for the same and developing it to make it suitable to run with package.
 
 To run this code, the carbondate package must first be installed. Because the package is currently private a few extra steps are needed so that (the authorised users only) can install it.
