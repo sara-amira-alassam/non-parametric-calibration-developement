@@ -5,18 +5,12 @@ set.seed(8)
 library(carbondate)
 
 ###############################################################################
-# Read in data
-Kerr <- read.csv("RealDatasets/kerr2014sss_sup.csv", header = FALSE, sep = ",")
-c14_ages <- Kerr[, 3]
-c14_sig <- Kerr[, 4] # corresponding 1 sigma
-
-###############################################################################
 # Set parameters - Updated adaptive version
 # Prior on mu theta for DP - very uninformative based on observed data
 initprobs <- mapply(
   carbondate::CalibrateSingleDetermination,
-  c14_ages,
-  c14_sig,
+  kerr$c14_ages,
+  kerr$c14_sig,
   MoreArgs = list(calibration_curve=carbondate::intcal20))
 inittheta <- intcal20$calendar_age[apply(initprobs, 2, which.max)]
 
@@ -35,9 +29,9 @@ lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
 ###############################################################################
 # Perform the MCMC update
 
-walker_temp <- carbondate::WalkerBivarDirichlet(
-  c14_determinations = c14_ages,
-  c14_uncertainties = c14_sig,
+walker_temp <- WalkerBivarDirichlet(
+  c14_determinations = kerr$c14_ages,
+  c14_uncertainties = kerr$c14_sig,
   calibration_curve=intcal20,
   lambda = lambda,
   nu1 = nu1,
@@ -46,7 +40,7 @@ walker_temp <- carbondate::WalkerBivarDirichlet(
   alpha_rate = 1,
   n_iter = 1000,
   n_thin = 5,
-  slice_width = max(1000, diff(range(c14_ages)) / 2),
+  slice_width = max(1000, diff(range(kerr$c14_ages)) / 2),
   slice_multiplier = 10,
   n_clust = 10)
 
@@ -58,24 +52,21 @@ walker_temp <- carbondate::WalkerBivarDirichlet(
 layout.matrix <- matrix(c(1, 2), nrow = 1, ncol = 2)
 layout(mat = layout.matrix, heights = c(1), widths = c(10, 4.5))
 
-carbondate::PlotCalendarAgeDensity(
-  c14_determinations = c14_ages,
-  c14_uncertainties = c14_sig,
+PlotCalendarAgeDensity(
+  c14_determinations = kerr$c14_ages,
+  c14_uncertainties = kerr$c14_sig,
   calibration_curve = intcal20,
   output_data = walker_temp,
-  n_posterior_samples = 5000,
-  lambda = lambda,
-  nu1 = nu1,
-  nu2 = nu2)
+  n_posterior_samples = 500)
 
-carbondate::PlotNumberOfClusters(output_data = walker_temp)
+PlotNumberOfClusters(output_data = walker_temp)
 
 # New plot for a single determination
 par(mfrow = c(1,1))
 
-carbondate::PlotIndividualCalendarAgeDensity(
+PlotIndividualCalendarAgeDensity(
   ident=10,
-  c14_determinations = c14_ages,
-  c14_uncertainties = c14_sig,
+  c14_determinations = kerr$c14_ages,
+  c14_uncertainties = kerr$c14_sig,
   calibration_curve = intcal20,
   output_data = walker_temp)
