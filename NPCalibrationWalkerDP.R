@@ -8,10 +8,10 @@ library(carbondate)
 # Set parameters - Updated adaptive version
 # Prior on mu theta for DP - very uninformative based on observed data
 initprobs <- mapply(
-  carbondate::CalibrateSingleDetermination,
+  CalibrateSingleDetermination,
   kerr$c14_ages,
   kerr$c14_sig,
-  MoreArgs = list(calibration_curve=carbondate::intcal20))
+  MoreArgs = list(calibration_curve=intcal20))
 inittheta <- intcal20$calendar_age[apply(initprobs, 2, which.max)]
 
 maxrange <- max(inittheta) - min(inittheta)

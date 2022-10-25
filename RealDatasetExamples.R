@@ -15,10 +15,10 @@ example_set <- kerr
 # Set parameters - Updated adaptive version
 # Prior on mu theta for DP - very uninformative based on observed data
 initprobs <- mapply(
-  carbondate::CalibrateSingleDetermination,
+  CalibrateSingleDetermination,
   example_set$c14_ages,
   example_set$c14_sig,
-  MoreArgs = list(calibration_curve=carbondate::intcal20))
+  MoreArgs = list(calibration_curve=intcal20))
 inittheta <- intcal20$calendar_age[apply(initprobs, 2, which.max)]
 
 maxrange <- max(inittheta) - min(inittheta)
@@ -36,7 +36,7 @@ lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
 ###############################################################################
 # Perform the MCMC update
 
-walker_temp <- carbondate::WalkerBivarDirichlet(
+walker_temp <- WalkerBivarDirichlet(
   c14_determinations = example_set$c14_ages,
   c14_uncertainties = example_set$c14_sig,
   calibration_curve=intcal20,
@@ -59,11 +59,11 @@ walker_temp <- carbondate::WalkerBivarDirichlet(
 layout.matrix <- matrix(c(1, 2), nrow = 1, ncol = 2)
 layout(mat = layout.matrix, heights = c(1), widths = c(10, 4.5))
 
-carbondate::PlotCalendarAgeDensity(
+PlotCalendarAgeDensity(
   c14_determinations = example_set$c14_ages,
   c14_uncertainties = example_set$c14_sig,
   calibration_curve = intcal20,
   output_data = walker_temp,
   n_posterior_samples = 500)
 
-carbondate::PlotNumberOfClusters(output_data = walker_temp)
+PlotNumberOfClusters(output_data = walker_temp)

@@ -14,7 +14,7 @@ library(carbondate)
 # Set parameters - Updated adaptive version
 # Prior on mu theta for DP - very uninformative based on observed data
 initprobs <- mapply(
-  carbondate::CalibrateSingleDetermination,
+  CalibrateSingleDetermination,
   kerr$c14_ages,
   kerr$c14_sig,
   MoreArgs = list(calibration_curve = intcal20))
@@ -33,7 +33,7 @@ lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
 
 ###############################################################################
 # Perform the MCMC update
-neal_temp <- carbondate::BivarGibbsDirichletwithSlice(
+neal_temp <- BivarGibbsDirichletwithSlice(
   c14_determinations = kerr$c14_ages,
   c14_uncertainties = kerr$c14_sig,
   calibration_curve = intcal20,
@@ -56,19 +56,19 @@ neal_temp <- carbondate::BivarGibbsDirichletwithSlice(
 layout.matrix <- matrix(c(1, 2), nrow = 1, ncol = 2)
 layout(mat = layout.matrix, heights = c(1), widths = c(10, 4.5))
 
-carbondate::PlotCalendarAgeDensity(
+PlotCalendarAgeDensity(
   c14_determinations = kerr$c14_ages,
   c14_uncertainties = kerr$c14_sig,
   calibration_curve = intcal20,
   output_data = neal_temp,
   n_posterior_samples = 500)
 
-carbondate::PlotNumberOfClusters(output_data = neal_temp)
+PlotNumberOfClusters(output_data = neal_temp)
 
 # New plot for a single determination
 par(mfrow = c(1,1))
 
-carbondate::PlotIndividualCalendarAgeDensity(
+PlotIndividualCalendarAgeDensity(
   ident=15,
   c14_determinations = kerr$c14_ages,
   c14_uncertainties = kerr$c14_sig,

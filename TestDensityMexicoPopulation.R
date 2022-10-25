@@ -24,7 +24,7 @@ true_calendar_ages <- sample(
 hist(true_calendar_ages, breaks = 30)
 
 # Create some radiocarbon determinations x
-interpolated_calibration_curve = carbondate::InterpolateCalibrationCurve(
+interpolated_calibration_curve = InterpolateCalibrationCurve(
   new_calendar_ages = true_calendar_ages, calibration_curve = intcal20)
 interpolated_c14_age <- interpolated_calibration_curve$c14_age
 interpolated_c14_sig <- interpolated_calibration_curve$c14_sig
@@ -39,7 +39,7 @@ c14_ages <- rnorm(num_observations, mean = xcalcurve, sd = c14_sig)
 # Set parameters - Updated adaptive version
 # Prior on mu theta for DP - very uninformative based on observed data
 initprobs <- mapply(
-  carbondate::CalibrateSingleDetermination,
+  CalibrateSingleDetermination,
   c14_ages,
   c14_sig,
   MoreArgs = list(calibration_curve = intcal20))
@@ -59,7 +59,7 @@ lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
 
 ###############################################################################
 # Implement the Neal version of the DPMM
-neal_temp <- carbondate::BivarGibbsDirichletwithSlice(
+neal_temp <- BivarGibbsDirichletwithSlice(
   c14_determinations = c14_ages,
   c14_uncertainties = c14_sig,
   calibration_curve = intcal20,
@@ -76,7 +76,7 @@ neal_temp <- carbondate::BivarGibbsDirichletwithSlice(
 
 ###############################################################################
 # Implement the Walker version of the DPMM
-walker_temp <- carbondate::WalkerBivarDirichlet(
+walker_temp <- WalkerBivarDirichlet(
   c14_determinations = c14_ages,
   c14_uncertainties = c14_sig,
   calibration_curve=intcal20,
@@ -99,7 +99,7 @@ walker_temp <- carbondate::WalkerBivarDirichlet(
 layout.matrix <- matrix(c(1, 1, 2, 3), nrow = 2, ncol = 2)
 layout(mat = layout.matrix, heights = c(3, 3), widths = c(10, 4.5))
 
-carbondate::PlotCalendarAgeDensity(
+PlotCalendarAgeDensity(
   c14_determinations = c14_ages,
   c14_uncertainties = c14_sig,
   calibration_curve = intcal20,
@@ -107,8 +107,8 @@ carbondate::PlotCalendarAgeDensity(
   n_posterior_samples = 500,
   true_density = popinterp)
 
-carbondate::PlotNumberOfClusters(output_data = neal_temp)
+PlotNumberOfClusters(output_data = neal_temp)
 
-carbondate::PlotNumberOfClusters(output_data = walker_temp)
+PlotNumberOfClusters(output_data = walker_temp)
 
 par(mfrow = c(1,1))
