@@ -16,6 +16,6 @@ usethis::create_github_token() # This takes you to the page to create the person
 credentials::set_github_pat("YourPAT") # The token you've just created
 ```
 
-After this is done, the final step is to run `install_github("TJHeaton/carbondate")`.
+After this is done, the final step is to run `install_github("TJHeaton/carbondate", build_vignettes = TRUE)`.
 
 Any of the scripts in this directory can then be run.

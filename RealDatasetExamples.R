@@ -45,7 +45,7 @@ walker_temp <- WalkerBivarDirichlet(
   nu2 = nu2,
   alpha_shape = 1,
   alpha_rate = 1,
-  n_iter = 1000,
+  n_iter = 1e5,
   n_thin = 5,
   slice_width = max(1000, diff(range(example_set$c14_ages)) / 2),
   slice_multiplier = 10,

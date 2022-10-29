@@ -42,8 +42,8 @@ neal_temp <- BivarGibbsDirichletwithSlice(
   nu2 = nu2,
   alpha_shape = 1,
   alpha_rate = 1,
-  n_iter = 1000,
-  n_thin = 5,
+  n_iter = 1e5,
+  n_thin = 10,
   slice_width = max(1000, diff(range(kerr$c14_ages)) / 2),
   slice_multiplier = 10,
   n_clust = 10)
@@ -61,7 +61,7 @@ PlotCalendarAgeDensity(
   c14_uncertainties = kerr$c14_sig,
   calibration_curve = intcal20,
   output_data = neal_temp,
-  n_posterior_samples = 500)
+  n_posterior_samples = 5000)
 
 PlotNumberOfClusters(output_data = neal_temp)
 
