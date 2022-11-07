@@ -30,61 +30,22 @@ xcalcurve <- rnorm(num_observations, interpolated_c14_age, interpolated_c14_sig)
 c14_ages <- rnorm(num_observations, mean = xcalcurve, sd = c14_sig)
 
 ###############################################################################
-# Set parameters - Updated adaptive version
-# Prior on mu theta for DP - very uninformative based on observed data
-initprobs <- mapply(
-  CalibrateSingleDetermination,
-  c14_ages,
-  c14_sig,
-  MoreArgs = list(calibration_curve = intcal20))
-inittheta <- intcal20$calendar_age[apply(initprobs, 2, which.max)]
-
-maxrange <- max(inittheta) - min(inittheta)
-
-# Parameters for sigma2 (sigma^2 ~ InvGamma(nu1, nu2))
-# E[tau] = (1/100)^2 Var[tau] = (1/100)^4
-# Interval for sigma2 is approx 1/c(nu2/nu1 - 2*nu2^2/nu1, nu2/nu1 +2*nu2^2/nu1)
-tempspread <- 0.1 * mad(inittheta)
-tempprec <- 1 / (tempspread)^2
-nu1 <- 0.25
-nu2 <- nu1 / tempprec
-lambda <- (100 / maxrange)^2 # Each muclust ~ N(mutheta, sigma2/lambda)
-
-
-###############################################################################
 # Implement the Neal version of the DPMM
-neal_temp <- BivarGibbsDirichletwithSlice(
+polya_urn_output <- PolyaUrnBivarDirichlet(
   c14_determinations = c14_ages,
-  c14_uncertainties = c14_sig,
+  c14_sigmas = c14_sig,
   calibration_curve = intcal20,
-  lambda = lambda,
-  nu1 = nu1,
-  nu2 = nu2,
-  alpha_shape = 1,
-  alpha_rate = 1,
-  n_iter = 1000,
-  n_thin = 5,
-  slice_width = max(1000, diff(range(c14_ages)) / 2),
-  slice_multiplier = 10,
-  n_clust = 10)
+  n_iter = 1e5,
+  n_thin = 5)
 
 ###############################################################################
 # Implement the Walker version of the DPMM
-walker_temp <- WalkerBivarDirichlet(
+walker_output <- WalkerBivarDirichlet(
   c14_determinations = c14_ages,
-  c14_uncertainties = c14_sig,
+  c14_sigmas = c14_sig,
   calibration_curve=intcal20,
-  lambda = lambda,
-  nu1 = nu1,
-  nu2 = nu2,
-  alpha_shape = 1,
-  alpha_rate = 1,
-  n_iter = 1000,
-  n_thin = 5,
-  slice_width = max(1000, diff(range(c14_ages)) / 2),
-  slice_multiplier = 10,
-  n_clust = 10)
-
+  n_iter = 1e5,
+  n_thin = 5)
 
 ###############################################################################
 # Plot results
@@ -93,17 +54,14 @@ walker_temp <- WalkerBivarDirichlet(
 layout.matrix <- matrix(c(1, 1, 2, 3), nrow = 2, ncol = 2)
 layout(mat = layout.matrix, heights = c(3, 3), widths = c(10, 4.5))
 
-PlotCalendarAgeDensity(
-  c14_determinations = c14_ages,
-  c14_uncertainties = c14_sig,
-  calibration_curve = intcal20,
-  output_data = list(walker_temp, neal_temp),
-  n_posterior_samples = 500,
+PlotPredictiveCalendarAgeDensity(
+  output_data = list(walker_output, polya_urn_output),
+  n_posterior_samples = 5000,
   show_confidence_intervals = FALSE,
   true_density=true_density)
 
-PlotNumberOfClusters(output_data = neal_temp)
+PlotNumberOfClusters(polya_urn_output)
 
-PlotNumberOfClusters(output_data = walker_temp)
+PlotNumberOfClusters(walker_output)
 
 par(mfrow = c(1,1))
