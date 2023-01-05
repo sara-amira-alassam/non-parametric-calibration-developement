@@ -4,7 +4,7 @@ Taking TJHeaton's code for the same and developing it to make it suitable to run
 To run this code, the carbondate package must first be installed. Because the package is currently private a few extra steps are needed so that (the authorised users only) can install it.
 
 ```
-library('dev-tools')
+library('devtools')
 
 ## set your user name and email:
 usethis::use_git_config(user.name = "YourName", user.email = "your@mail.com")
